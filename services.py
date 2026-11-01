@@ -3,10 +3,9 @@ import requests
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Busca a partida em destaque no topo da live (mesmo offline):
-    1. Procura jogo rolando AO VIVO.
-    2. Se não houver, busca o próximo jogo agendado / futuro (ex: Santos x Bragantino).
-    3. Se não houver nenhum jogo futuro na API, usa o último jogo finalizado como histórico.
+    Busca o próximo jogo em destaque (ex: Santos x Bragantino),
+    retorna os escudos para o topo e injeta a logo oficial do site 
+    para exibição na tela de transmissão offline.
     """
     if not api_endpoint:
         api_endpoint = "https://sua-api-de-futebol.com/api/jogos"
@@ -25,21 +24,19 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         hoje = str(date.today())
         partida_destaque = None
 
-        # 1. Prioridade máxima: Jogo AO VIVO agora
+        # 1. Prioridade máxima: Jogo AO VIVO rodando agora
         partida_destaque = next((p for p in partidas if p.get("status") in ["LIVE", "IN_PLAY"]), None)
 
-        # 2. Segunda prioridade: O próximo jogo agendado ou jogo de hoje (funciona mesmo offline!)
+        # 2. Segunda prioridade: O próximo jogo agendado ou de hoje (ex: Santos x Bragantino amanhã)
         if not partida_destaque:
-            # Filtra partidas que vão acontecer hoje ou em datas futuras
             partidas_futuras = [
                 p for p in partidas 
                 if p.get("status") in ["SCHEDULED", "TIMED", "AGENDADO", "NOT_STARTED"] or str(p.get("date", "")) >= hoje
             ]
             if partidas_futuras:
-                # Pega o primeiro jogo agendado da fila (o mais próximo cronologicamente)
                 partida_destaque = partidas_futuras[0]
 
-        # 3. Fallback: Se a temporada acabou e não tem jogo futuro, mostra o último encerrado
+        # 3. Fallback: Último jogo encerrado caso não haja mais partidas futuras
         if not partida_destaque:
             partidas_finalizadas = [p for p in partidas if p.get("status") in ["FINISHED", "FT", "Partida Finalizada"]]
             if partidas_finalizadas:
@@ -47,6 +44,12 @@ def obter_jogos_serie_a(api_endpoint: str = None):
                 partida_destaque["statusCustomizado"] = "Partida Finalizada"
             else:
                 partida_destaque = partidas[0]
+
+        # Injeta a logo do seu site e o estado da transmissão na resposta da API
+        if partida_destaque:
+            partida_destaque["logo_transmissao_offline"] = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rhozi-removebg-preview.png"
+            is_live = partida_destaque.get("status") in ["LIVE", "IN_PLAY"]
+            partida_destaque["status_transmissao"] = "AO_VIVO" if is_live else "OFFLINE"
 
         return [partida_destaque] if partida_destaque else partidas
 
