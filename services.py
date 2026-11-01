@@ -3,8 +3,8 @@ import requests
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Busca o jogo em destaque, priorizando o confronto agendado de amanhã (Santos x Bragantino)
-    e injetando a logo oficial do site para exibição na transmissão offline.
+    Busca os jogos da Série A, garante que o jogo do Santos x Bragantino 
+    apareça no topo e retorna a lista completa para a aba Agendados.
     """
     if not api_endpoint:
         api_endpoint = "https://sua-api-de-futebol.com/api/jogos"
@@ -26,7 +26,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         # 1. Prioridade máxima: Jogo AO VIVO rodando agora
         partida_destaque = next((p for p in partidas if p.get("status") in ["LIVE", "IN_PLAY"]), None)
 
-        # 2. Tenta encontrar especificamente Santos x Bragantino se estiver na lista de agendados
+        # 2. Busca especificamente o jogo de Santos x Bragantino para garantir o destaque e exibição nos agendados
         if not partida_destaque:
             partida_destaque = next((
                 p for p in partidas 
@@ -52,13 +52,14 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             else:
                 partida_destaque = partidas[0]
 
-        # Injeta a logo do seu site e o estado da transmissão na resposta da API
+        # Injeta a logo do seu site e o estado da transmissão no destaque
         if partida_destaque:
             partida_destaque["logo_transmissao_offline"] = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rhozi-removebg-preview.png"
             is_live = partida_destaque.get("status") in ["LIVE", "IN_PLAY"]
             partida_destaque["status_transmissao"] = "AO_VIVO" if is_live else "OFFLINE"
 
-        return [partida_destaque] if partida_destaque else partidas
+        # Retorna a lista completa para preencher os Agendados, mantendo o destaque preparado
+        return partidas
 
     except Exception as e:
         print(f"Erro ao buscar dados da API: {e}")
