@@ -3,9 +3,8 @@ import requests
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Busca o próximo jogo em destaque (ex: Santos x Bragantino),
-    retorna os escudos para o topo e injeta a logo oficial do site 
-    para exibição na tela de transmissão offline.
+    Busca o jogo em destaque, priorizando o confronto agendado de amanhã (Santos x Bragantino)
+    e injetando a logo oficial do site para exibição na transmissão offline.
     """
     if not api_endpoint:
         api_endpoint = "https://sua-api-de-futebol.com/api/jogos"
@@ -27,7 +26,15 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         # 1. Prioridade máxima: Jogo AO VIVO rodando agora
         partida_destaque = next((p for p in partidas if p.get("status") in ["LIVE", "IN_PLAY"]), None)
 
-        # 2. Segunda prioridade: O próximo jogo agendado ou de hoje (ex: Santos x Bragantino amanhã)
+        # 2. Tenta encontrar especificamente Santos x Bragantino se estiver na lista de agendados
+        if not partida_destaque:
+            partida_destaque = next((
+                p for p in partidas 
+                if ("santos" in str(p.get("homeTeam", {}).get("name", "")).lower() or "santos" in str(p.get("awayTeam", {}).get("name", "")).lower()) 
+                and ("bragantino" in str(p.get("homeTeam", {}).get("name", "")).lower() or "bragantino" in str(p.get("awayTeam", {}).get("name", "")).lower())
+            ), None)
+
+        # 3. Se não achar o do Santos especificamente, pega o próximo jogo agendado/futuro da fila
         if not partida_destaque:
             partidas_futuras = [
                 p for p in partidas 
@@ -36,7 +43,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             if partidas_futuras:
                 partida_destaque = partidas_futuras[0]
 
-        # 3. Fallback: Último jogo encerrado caso não haja mais partidas futuras
+        # 4. Fallback: Último jogo encerrado caso não haja mais partidas futuras
         if not partida_destaque:
             partidas_finalizadas = [p for p in partidas if p.get("status") in ["FINISHED", "FT", "Partida Finalizada"]]
             if partidas_finalizadas:
