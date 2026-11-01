@@ -1,13 +1,12 @@
-
 from datetime import date
 import requests
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Busca a partida em destaque no topo da live:
-    1. Prioriza o jogo de HOJE ou o PRÓXIMO jogo agendado (mesmo com a live offline).
-    2. Se houver jogo rolando ao vivo, ele assume o destaque.
-    3. Só usa partida finalizada como último recurso se não houver mais nenhum jogo futuro.
+    Busca a partida em destaque no topo da live (mesmo offline):
+    1. Procura jogo rolando AO VIVO.
+    2. Se não houver, busca o próximo jogo agendado / futuro (ex: Santos x Bragantino).
+    3. Se não houver nenhum jogo futuro na API, usa o último jogo finalizado como histórico.
     """
     if not api_endpoint:
         api_endpoint = "https://sua-api-de-futebol.com/api/jogos"
@@ -24,23 +23,23 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             return []
 
         hoje = str(date.today())
-
         partida_destaque = None
 
-        # 1. Procura primeiro se há um jogo rolando AO VIVO
+        # 1. Prioridade máxima: Jogo AO VIVO agora
         partida_destaque = next((p for p in partidas if p.get("status") in ["LIVE", "IN_PLAY"]), None)
 
-        # 2. Se não estiver ao vivo, procura imediatamente o jogo agendado para HOJE ou o PRÓXIMO jogo futuro (ex: Santos x Bragantino amanhã)
+        # 2. Segunda prioridade: O próximo jogo agendado ou jogo de hoje (funciona mesmo offline!)
         if not partida_destaque:
-            # Filtra partidas de hoje ou futuras
+            # Filtra partidas que vão acontecer hoje ou em datas futuras
             partidas_futuras = [
                 p for p in partidas 
                 if p.get("status") in ["SCHEDULED", "TIMED", "AGENDADO", "NOT_STARTED"] or str(p.get("date", "")) >= hoje
             ]
             if partidas_futuras:
-                partida_destaque = partidas_futuras[0] # Pega o próximo jogo da fila (ex: Santos)
+                # Pega o primeiro jogo agendado da fila (o mais próximo cronologicamente)
+                partida_destaque = partidas_futuras[0]
 
-        # 3. Fallback absoluto: Se realmente não houver nenhum jogo agendado para frente, mostra o último encerrado
+        # 3. Fallback: Se a temporada acabou e não tem jogo futuro, mostra o último encerrado
         if not partida_destaque:
             partidas_finalizadas = [p for p in partidas if p.get("status") in ["FINISHED", "FT", "Partida Finalizada"]]
             if partidas_finalizadas:
