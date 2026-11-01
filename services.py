@@ -1,7 +1,8 @@
+
 from datetime import date
 import requests
 
-def buscar_partida_destaque(api_endpoint: str):
+def obter_jogos_serie_a(api_endpoint: str = None):
     """
     Busca a partida em destaque no topo da live:
     1. Procura jogo rolando AO VIVO.
@@ -9,16 +10,20 @@ def buscar_partida_destaque(api_endpoint: str):
     3. Se não houver jogo hoje, pega o PRÓXIMO jogo agendado (ex: o jogo de amanhã).
     4. Fallback final: se não houver futuro, pega a última partida encerrada.
     """
+    if not api_endpoint:
+        # Coloque a URL padrão da sua API aqui caso o endpoint não seja passado
+        api_endpoint = "https://sua-api-de-futebol.com/api/jogos"
+
     try:
         response = requests.get(api_endpoint, timeout=10)
         if response.status_code != 200:
-            return None
+            return []
         
         data = response.json()
-        partidas = data.get("matches", data.get("response", []))
+        partidas = data.get("matches", data.get("response", data if isinstance(data, list) else []))
         
         if not partidas:
-            return None
+            return []
 
         hoje = str(date.today())
 
@@ -33,8 +38,8 @@ def buscar_partida_destaque(api_endpoint: str):
         if not partida_destaque:
             partidas_futuras = [p for p in partidas if p.get("status") in ["SCHEDULED", "TIMED", "AGENDADO"] or str(p.get("date", "")) > hoje]
             if partidas_futuras:
-                partida_destaque = partidas_futuras[0] # Pega o próximo da fila
-        
+                partida_destaque = partidas_futuras[0]
+
         # 4. Fallback: Se não houver futuro, pega a última partida encerrada
         if not partida_destaque:
             partidas_finalizadas = [p for p in partidas if p.get("status") in ["FINISHED", "FT", "Partida Finalizada"]]
@@ -44,8 +49,9 @@ def buscar_partida_destaque(api_endpoint: str):
             else:
                 partida_destaque = partidas[0]
 
-        return partida_destaque
+        # Retorna a lista contendo a partida destaque ou a lista completa conforme esperado pelo main.py
+        return [partida_destaque] if partida_destaque else partidas
 
     except Exception as e:
         print(f"Erro ao buscar dados da API: {e}")
-        return None
+        return []
