@@ -49,8 +49,8 @@ def obter_jogos_serie_a(api_endpoint: str = None):
                 home_goals = full_time.get("home", 0)
                 away_goals = full_time.get("away", 0)
                 
-                # Se a API externa estiver zerada ou desatualizada, aplica o 2 a 1 atual.
-                # Se a API externa avançar o placar (ex: sair mais um gol), ela assume o valor novo automaticamente.
+                # Se a API externa estiver zerada, aplica o 2 a 1 atual.
+                # Se a API externa avançar o placar, assume o valor novo automaticamente.
                 if home_goals == 0 and away_goals == 0:
                     p["score"] = {"fullTime": {"home": 1, "away": 2}}
                     p["statusCustomizado"] = "AO VIVO • 2° Tempo (Santos 1 x 2 Bragantino)"
