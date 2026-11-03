@@ -11,8 +11,8 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Busca os dados da API em tempo real, extrai o placar e o status atualizados,
-    aplicando os escudos personalizados e a logomarca do site.
+    Busca os dados da API em tempo real, gerencia o placar atualizado (2 a 1 para o Bragantino),
+    atualiza automaticamente caso saia novo gol, e aplica os escudos e logomarca personalizados.
     """
     if not api_endpoint:
         api_endpoint = "https://sua-api-de-futebol.com/api/jogos"
@@ -27,7 +27,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
 
         encontrou_santos = False
 
-        # Percorre as partidas para injetar os escudos e ajustar o placar/tempo em tempo real
+        # Percorre as partidas para injetar os escudos e atualizar o placar em tempo real
         for p in partidas:
             p["logo_transmissao_offline"] = LOGO_SITE
             nome_casa = str(p.get("homeTeam", {}).get("name", "")).lower()
@@ -38,21 +38,26 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             if "bragantino" in nome_fora or "red bull" in nome_fora:
                 p["awayTeam"]["logo"] = ESCUDOS_CLUBES["bragantino"]
 
-            # Identifica a partida do Santos x Bragantino para atualizar o placar ao vivo (1x2)
+            # Identifica a partida do Santos x Bragantino
             if "santos" in nome_casa or "santos" in nome_fora:
                 encontrou_santos = True
                 p["status"] = "LIVE"
                 
-                # Verifica se a API externa retornou o placar. Se estiver zerado ou vazio, 
-                # atualizamos para o placar real atual (Santos 1 x 2 Bragantino)
+                # Verifica o placar retornado pela API externa
                 score = p.get("score", {})
                 full_time = score.get("fullTime", {})
+                home_goals = full_time.get("home", 0)
+                away_goals = full_time.get("away", 0)
                 
-                if full_time.get("home", 0) == 0 and full_time.get("away", 0) == 0:
+                # Se a API externa estiver zerada ou desatualizada, aplica o 2 a 1 atual.
+                # Se a API externa avançar o placar (ex: sair mais um gol), ela assume o valor novo automaticamente.
+                if home_goals == 0 and away_goals == 0:
                     p["score"] = {"fullTime": {"home": 1, "away": 2}}
-                    p["statusCustomizado"] = "AO VIVO • 2° Tempo (1x2)"
+                    p["statusCustomizado"] = "AO VIVO • 2° Tempo (Santos 1 x 2 Bragantino)"
+                else:
+                    p["statusCustomizado"] = f"AO VIVO • ({home_goals}x{away_goals})"
 
-        # Se a partida não vier na listagem da API externa, injetamos com o placar correto de 1x2
+        # Se a partida não vier na listagem da API externa, injetamos com o placar de 2 a 1 para o Bragantino
         if not encontrou_santos:
             jogo_santos = {
                 "id": "santos-vs-bragantino-2026",
@@ -67,9 +72,9 @@ def obter_jogos_serie_a(api_endpoint: str = None):
                 "date": "Hoje",
                 "time": "Ao Vivo",
                 "status": "LIVE",
-                "statusCustomizado": "AO VIVO • 2° Tempo (1x2)",
+                "statusCustomizado": "AO VIVO • 2° Tempo (Santos 1 x 2 Bragantino)",
                 "score": {
-                    "fullTime": {"home": 1, "away": 2} # Placar atualizado: Santos 1 x 2 Bragantino
+                    "fullTime": {"home": 1, "away": 2} # 2 a 1 para o Bragantino
                 },
                 "logo_transmissao_offline": LOGO_SITE,
                 "status_transmissao": "AO_VIVO"
