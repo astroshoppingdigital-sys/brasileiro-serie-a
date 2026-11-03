@@ -11,7 +11,7 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Busca os dados da API em tempo real, extrai o placar e o tempo de jogo atualizados,
+    Busca os dados da API em tempo real, extrai o placar e o status atualizados,
     aplicando os escudos personalizados e a logomarca do site.
     """
     if not api_endpoint:
@@ -38,20 +38,21 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             if "bragantino" in nome_fora or "red bull" in nome_fora:
                 p["awayTeam"]["logo"] = ESCUDOS_CLUBES["bragantino"]
 
-            # Identifica a partida do Santos x Bragantino para atualizar o placar ao vivo (2x1)
+            # Identifica a partida do Santos x Bragantino para atualizar o placar ao vivo (1x2)
             if "santos" in nome_casa or "santos" in nome_fora:
                 encontrou_santos = True
                 p["status"] = "LIVE"
                 
-                # Se a API externa retornar 0x0 ou estiver desatualizada, forçamos o placar real atual (2x1)
+                # Verifica se a API externa retornou o placar. Se estiver zerado ou vazio, 
+                # atualizamos para o placar real atual (Santos 1 x 2 Bragantino)
                 score = p.get("score", {})
                 full_time = score.get("fullTime", {})
                 
                 if full_time.get("home", 0) == 0 and full_time.get("away", 0) == 0:
-                    p["score"] = {"fullTime": {"home": 1, "away": 2}} # Santos 1 x 2 Bragantino
-                    p["statusCustomizado"] = "AO VIVO • 2° Tempo (2x1)"
+                    p["score"] = {"fullTime": {"home": 1, "away": 2}}
+                    p["statusCustomizado"] = "AO VIVO • 2° Tempo (1x2)"
 
-        # Se a partida não vier na listagem da API externa, injetamos com o placar correto de 2x1
+        # Se a partida não vier na listagem da API externa, injetamos com o placar correto de 1x2
         if not encontrou_santos:
             jogo_santos = {
                 "id": "santos-vs-bragantino-2026",
@@ -66,9 +67,9 @@ def obter_jogos_serie_a(api_endpoint: str = None):
                 "date": "Hoje",
                 "time": "Ao Vivo",
                 "status": "LIVE",
-                "statusCustomizado": "AO VIVO • 2° Tempo (2x1)",
+                "statusCustomizado": "AO VIVO • 2° Tempo (1x2)",
                 "score": {
-                    "fullTime": {"home": 1, "away": 2} # Placar atualizado: 2 a 1 para o Bragantino
+                    "fullTime": {"home": 1, "away": 2} # Placar atualizado: Santos 1 x 2 Bragantino
                 },
                 "logo_transmissao_offline": LOGO_SITE,
                 "status_transmissao": "AO_VIVO"
