@@ -4,85 +4,72 @@ import requests
 # Links oficiais dos escudos e da logo fornecidos por você
 ESCUDOS_CLUBES = {
     "santos": "https://i.postimg.cc/j2tjm9P0/santos-fc.png",
-    "bragantino": "https://i.postimg.cc/Qtk8QbPP/Red-Bull-Bragantino.png"
+    "coritiba": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Coritiba_Foot_Ball_Club_logo.svg/1200px-Coritiba_Foot_Ball_Club_logo.svg.png",
+    "gremio": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Gr%C3%AAmio_Foot-Ball_Porto-Alegrense_logo.svg/1200px-Gr%C3%AAmio_Foot-Ball_Porto-Alegrense_logo.svg.png",
+    "vitoria": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Esporte_Clube_Vit%C3%B3ria_logo.svg/1200px-Esporte_Clube_Vit%C3%B3ria_logo.svg.png",
+    "botafogo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Botafogo_de_Futebol_e_Regatas_logo.svg/1200px-Botafogo_de_Futebol_e_Regatas_logo.svg.png"
 }
 
 LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rhozi-removebg-preview.png"
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Busca os dados da API em tempo real, gerencia o placar atualizado (2 a 1 para o Bragantino),
-    atualiza automaticamente caso saia novo gol, e aplica os escudos e logomarca personalizados.
+    Retorna a lista exclusiva dos próximos jogos do Santos solicitados,
+    com escudos personalizados e logomarca do site.
     """
-    if not api_endpoint:
-        api_endpoint = "https://sua-api-de-futebol.com/api/jogos"
+    jogos_agendados_santos = [
+        {
+            "id": "coritiba-santos-2026",
+            "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},
+            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "date": "18/11",
+            "time": "19:30",
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado - 18/11, 19:30",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status_transmissao": "OFFLINE"
+        },
+        {
+            "id": "gremio-santos-2026",
+            "homeTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},
+            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "date": "23/11",
+            "time": "21:00",
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado - 23/11, 21:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status_transmissao": "OFFLINE"
+        },
+        {
+            "id": "vitoria-santos-2026",
+            "homeTeam": {"name": "EC Vitória", "logo": ESCUDOS_CLUBES["vitoria"]},
+            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "date": "29/11",
+            "time": "A confirmar",
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado - 29/11",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status_transmissao": "OFFLINE"
+        },
+        {
+            "id": "botafogo-santos-2026",
+            "homeTeam": {"name": "Botafogo", "logo": ESCUDOS_CLUBES["botafogo"]},
+            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "date": "02/12",
+            "time": "A confirmar",
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado - 02/12",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status_transmissao": "OFFLINE"
+        }
+    ]
 
     try:
-        response = requests.get(api_endpoint, timeout=10)
-        partidas = []
-        
-        if response.status_code == 200:
-            data = response.json()
-            partidas = data.get("matches", data.get("response", data if isinstance(data, list) else []))
-
-        encontrou_santos = False
-
-        # Percorre as partidas para injetar os escudos e atualizar o placar em tempo real
-        for p in partidas:
-            p["logo_transmissao_offline"] = LOGO_SITE
-            nome_casa = str(p.get("homeTeam", {}).get("name", "")).lower()
-            nome_fora = str(p.get("awayTeam", {}).get("name", "")).lower()
-
-            if "santos" in nome_casa:
-                p["homeTeam"]["logo"] = ESCUDOS_CLUBES["santos"]
-            if "bragantino" in nome_fora or "red bull" in nome_fora:
-                p["awayTeam"]["logo"] = ESCUDOS_CLUBES["bragantino"]
-
-            # Identifica a partida do Santos x Bragantino
-            if "santos" in nome_casa or "santos" in nome_fora:
-                encontrou_santos = True
-                p["status"] = "LIVE"
-                
-                # Verifica o placar retornado pela API externa
-                score = p.get("score", {})
-                full_time = score.get("fullTime", {})
-                home_goals = full_time.get("home", 0)
-                away_goals = full_time.get("away", 0)
-                
-                # Se a API externa estiver zerada, aplica o 2 a 1 atual.
-                # Se a API externa avançar o placar, assume o valor novo automaticamente.
-                if home_goals == 0 and away_goals == 0:
-                    p["score"] = {"fullTime": {"home": 1, "away": 2}}
-                    p["statusCustomizado"] = "AO VIVO • 2° Tempo (Santos 1 x 2 Bragantino)"
-                else:
-                    p["statusCustomizado"] = f"AO VIVO • ({home_goals}x{away_goals})"
-
-        # Se a partida não vier na listagem da API externa, injetamos com o placar de 2 a 1 para o Bragantino
-        if not encontrou_santos:
-            jogo_santos = {
-                "id": "santos-vs-bragantino-2026",
-                "homeTeam": {
-                    "name": "Santos",
-                    "logo": ESCUDOS_CLUBES["santos"]
-                },
-                "awayTeam": {
-                    "name": "Bragantino",
-                    "logo": ESCUDOS_CLUBES["bragantino"]
-                },
-                "date": "Hoje",
-                "time": "Ao Vivo",
-                "status": "LIVE",
-                "statusCustomizado": "AO VIVO • 2° Tempo (Santos 1 x 2 Bragantino)",
-                "score": {
-                    "fullTime": {"home": 1, "away": 2} # 2 a 1 para o Bragantino
-                },
-                "logo_transmissao_offline": LOGO_SITE,
-                "status_transmissao": "AO_VIVO"
-            }
-            partidas.append(jogo_santos)
-
-        return partidas
-
+        return jogos_agendados_santos
     except Exception as e:
-        print(f"Erro ao buscar dados da API: {e}")
-        return []
+        print(f"Erro ao carregar os jogos: {e}")
+        return jogos_agendados_santos
