@@ -14,14 +14,15 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Retorna a lista dos próximos jogos do Santos com os mandos de campo corretos,
-    horários, escudos, e ativação automática da escalação 10 minutos antes na aba Ao Vivo.
+    Retorna a lista dos próximos jogos do Santos com os mandos de campo corretos
+    (Coritiba mandante, Grêmio mandante, Vitória mandante e Santos mandante contra o Botafogo),
+    com ativação automática da escalação 10 minutos antes na aba Ao Vivo.
     """
     jogos_santos = [
         {
             "id": "coritiba-santos-2026",
-            "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},
-            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]}, # Mandante (Esquerda)
+            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},     # Visitante (Direita)
             "date": "18/11",
             "time": "19:30",
             "timestamp_jogo": "2026-11-18T19:30:00",
@@ -34,8 +35,8 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         },
         {
             "id": "santos-gremio-2026",
-            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
-            "awayTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},
+            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},     # Mandante (Esquerda)
+            "awayTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},     # Visitante (Direita)
             "date": "23/11",
             "time": "21:00",
             "timestamp_jogo": "2026-11-23T21:00:00",
@@ -48,11 +49,11 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         },
         {
             "id": "vitoria-santos-2026",
-            "homeTeam": {"name": "EC Vitória", "logo": ESCUDOS_CLUBES["vitoria"]},
-            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "homeTeam": {"name": "EC Vitória", "logo": ESCUDOS_CLUBES["vitoria"]}, # Mandante (Esquerda)
+            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},     # Visitante (Direita)
             "date": "29/11",
             "time": "A confirmar",
-            "timestamp_jogo": "2026-11-29T16:00:00", # Horário base para validação
+            "timestamp_jogo": "2026-11-29T16:00:00",
             "status": "SCHEDULED",
             "statusCustomizado": "Agendado - 29/11",
             "score": {"fullTime": {"home": 0, "away": 0}},
@@ -62,8 +63,8 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         },
         {
             "id": "santos-botafogo-2026",
-            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
-            "awayTeam": {"name": "Botafogo", "logo": ESCUDOS_CLUBES["botafogo"]},
+            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},     # Mandante (Esquerda)
+            "awayTeam": {"name": "Botafogo", "logo": ESCUDOS_CLUBES["botafogo"]}, # Visitante (Direita)
             "date": "02/12",
             "time": "15:00",
             "timestamp_jogo": "2026-12-02T15:00:00",
