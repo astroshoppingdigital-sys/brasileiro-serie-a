@@ -14,10 +14,14 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Retorna a lista exclusiva dos próximos jogos do Santos solicitados,
-    com escudos personalizados e logomarca do site.
+    Retorna os próximos jogos do Santos com horários, escudos personalizados,
+    logomarca do site e suporte a atualizações dinâmicas de tempo, placar e status (Ao Vivo, Intervalo, Encerrado).
     """
-    jogos_agendados_santos = [
+    if not api_endpoint:
+        api_endpoint = "https://sua-api-de-futebol.com/api/jogos"
+
+    # Lista base dos próximos jogos do Santos configurados
+    jogos_santos = [
         {
             "id": "coritiba-santos-2026",
             "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},
@@ -55,13 +59,13 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "status_transmissao": "OFFLINE"
         },
         {
-            "id": "botafogo-santos-2026",
-            "homeTeam": {"name": "Botafogo", "logo": ESCUDOS_CLUBES["botafogo"]},
-            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "id": "santos-botafogo-2026",
+            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "awayTeam": {"name": "Botafogo", "logo": ESCUDOS_CLUBES["botafogo"]},
             "date": "02/12",
-            "time": "A confirmar",
+            "time": "15:00",  # Horário ajustado para as 15h com o Santos mandante na Vila Belmiro
             "status": "SCHEDULED",
-            "statusCustomizado": "Agendado - 02/12",
+            "statusCustomizado": "Agendado - 02/12, 15:00",
             "score": {"fullTime": {"home": 0, "away": 0}},
             "logo_transmissao_offline": LOGO_SITE,
             "status_transmissao": "OFFLINE"
@@ -69,7 +73,44 @@ def obter_jogos_serie_a(api_endpoint: str = None):
     ]
 
     try:
-        return jogos_agendados_santos
+        # Tenta buscar atualizações em tempo real da API externa (placar, intervalo, fim de jogo, etc.)
+        response = requests.get(api_endpoint, timeout=5)
+        if response.status_code == 200:
+            data = response.json()
+            partidas_api = data.get("matches", data.get("response", data if isinstance(data, list) else []))
+            
+            # Cruzamento opcional para atualizar dinamicamente se a API externa fornecer dados da partida em andamento
+            for jogo in jogos_santos:
+                for p in partidas_api:
+                    # Lógica para identificar o confronto correspondente
+                    home_api = str(p.get("homeTeam", {}).get("name", "")).lower()
+                    away_api = str(p.get("awayTeam", {}).get("name", "")).lower()
+                    
+                    if "santos" in home_api or "santos" in away_api:
+                        api_status = str(p.get("status", "")).upper()
+                        
+                        # Se a API externa indicar que o jogo está ao vivo, em intervalo ou encerrado, atualiza o status dinamicamente
+                        if api_status in ["LIVE", "IN_PLAY", "HT", "PAUSED", "FINISHED", "FT"]:
+                            jogo["status"] = "LIVE" if api_status != "FINISHED" else "FINISHED"
+                            
+                            # Atualiza placar real vindo da API
+                            if "score" in p:
+                                jogo["score"] = p["score"]
+                                
+                            # Customiza o status do tempo (1º tempo, intervalo, 2º tempo, fim de jogo)
+                            if api_status in ["HT", "PAUSED"]:
+                                jogo["statusCustomizado"] = "Intervalo"
+                            elif api_status in ["FINISHED", "FT"]:
+                                jogo["statusCustomizado"] = "Encerrado"
+                                jogo["status_transmissao"] = "OFFLINE"
+                            else:
+                                minuto = p.get("minute", "Ao Vivo")
+                                jogo["statusCustomizado"] = f"AO VIVO • {minuto}"
+                                jogo["status_transmissao"] = "AO_VIVO"
+
+        return jogos_santos
+
     except Exception as e:
-        print(f"Erro ao carregar os jogos: {e}")
-        return jogos_agendados_santos
+        print(f"Erro ao consultar API externa em tempo real: {e}")
+        # Retorna a lista configurada com horários e escudos mesmo se a API externa falhar
+        return jogos_santos
