@@ -1,9 +1,11 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 
-# Links oficiais dos escudos e da logo fornecidos por você
+# Dicionário de escudos dos clubes
 ESCUDOS_CLUBES = {
     "santos": "https://i.postimg.cc/j2tjm9P0/santos-fc.png",
+    "sao_paulo": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Brasao_do_Sao_Paulo_Futebol_Clube.svg/1200px-Brasao_do_Sao_Paulo_Futebol_Clube.svg.png",
+    "corinthians": "https://upload.wikimedia.org/wikipedia/pt/b/b4/Corinthians_simbolo.png",
     "coritiba": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Coritiba_Foot_Ball_Club_logo.svg/1200px-Coritiba_Foot_Ball_Club_logo.svg.png",
     "gremio": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Gr%C3%AAmio_Foot-Ball_Porto-Alegrense_logo.svg/1200px-Gr%C3%AAmio_Foot-Ball_Porto-Alegrense_logo.svg.png",
     "vitoria": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Esporte_Clube_Vit%C3%B3ria_logo.svg/1200px-Esporte_Clube_Vit%C3%B3ria_logo.svg.png",
@@ -14,104 +16,65 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Retorna a lista dos próximos jogos do Santos com os mandos de campo corretos
-    (Coritiba mandante, Grêmio mandante, Vitória mandante e Santos mandante contra o Botafogo),
-    com ativação automática da escalação 10 minutos antes na aba Ao Vivo.
+    Controla o clássico São Paulo x Corinthians.
+    Entra no ar automaticamente 10 minutos antes da partida e transmite até o fim.
     """
-    jogos_santos = [
-        {
-            "id": "coritiba-santos-2026",
-            "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]}, # Mandante (Esquerda)
-            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},     # Visitante (Direita)
-            "date": "18/11",
-            "time": "19:30",
-            "timestamp_jogo": "2026-11-18T19:30:00",
-            "status": "SCHEDULED",
-            "statusCustomizado": "Agendado - 18/11, 19:30",
-            "score": {"fullTime": {"home": 0, "away": 0}},
-            "logo_transmissao_offline": LOGO_SITE,
-            "status_transmissao": "OFFLINE",
-            "escalacao": []
-        },
-        {
-            "id": "santos-gremio-2026",
-            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},     # Mandante (Esquerda)
-            "awayTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},     # Visitante (Direita)
-            "date": "23/11",
-            "time": "21:00",
-            "timestamp_jogo": "2026-11-23T21:00:00",
-            "status": "SCHEDULED",
-            "statusCustomizado": "Agendado - 23/11, 21:00",
-            "score": {"fullTime": {"home": 0, "away": 0}},
-            "logo_transmissao_offline": LOGO_SITE,
-            "status_transmissao": "OFFLINE",
-            "escalacao": []
-        },
-        {
-            "id": "vitoria-santos-2026",
-            "homeTeam": {"name": "EC Vitória", "logo": ESCUDOS_CLUBES["vitoria"]}, # Mandante (Esquerda)
-            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},     # Visitante (Direita)
-            "date": "29/11",
-            "time": "A confirmar",
-            "timestamp_jogo": "2026-11-29T16:00:00",
-            "status": "SCHEDULED",
-            "statusCustomizado": "Agendado - 29/11",
-            "score": {"fullTime": {"home": 0, "away": 0}},
-            "logo_transmissao_offline": LOGO_SITE,
-            "status_transmissao": "OFFLINE",
-            "escalacao": []
-        },
-        {
-            "id": "santos-botafogo-2026",
-            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},     # Mandante (Esquerda)
-            "awayTeam": {"name": "Botafogo", "logo": ESCUDOS_CLUBES["botafogo"]}, # Visitante (Direita)
-            "date": "02/12",
-            "time": "15:00",
-            "timestamp_jogo": "2026-12-02T15:00:00",
-            "status": "SCHEDULED",
-            "statusCustomizado": "Agendado - 02/12, 15:00",
-            "score": {"fullTime": {"home": 0, "away": 0}},
-            "logo_transmissao_offline": LOGO_SITE,
-            "status_transmissao": "OFFLINE",
-            "escalacao": []
-        }
-    ]
+    
+    dados_api_externa = None
+    if api_endpoint:
+        try:
+            resposta = requests.get(api_endpoint, timeout=5)
+            if resposta.status_code == 200:
+                dados_api_externa = resposta.json()
+        except Exception as err:
+            print(f"Aviso: Não foi possível obter dados da API externa ({err}).")
 
+    status_externo = None
+    placar_home = 0
+    placar_away = 0
+
+    if dados_api_externa:
+        status_externo = dados_api_externa.get("status_partida")
+        placar_home = dados_api_externa.get("score_home", 0)
+        placar_away = dados_api_externa.get("score_away", 0)
+
+    # DEFINA AQUI A DATA E HORA EXATA DO JOGO (Ano, Mês, Dia, Hora, Minuto)
+    # Exemplo: Jogo dia 10 de novembro de 2026 às 16:00
+    timestamp_jogo = datetime(2026, 11, 10, 16, 0, 0)
     agora = datetime.now()
 
-    # Lógica de tempo para verificar os 10 minutos pré-jogo
-    for jogo in jogos_santos:
-        try:
-            data_jogo = datetime.strptime(jogo["timestamp_jogo"], "%Y-%m-%dT%H:%M:%S")
-            diferenca_minutos = (data_jogo - agora).total_seconds() / 60
+    # Calcula a diferença em minutos entre o horário atual e o horário do jogo
+    diferenca_minutos = (timestamp_jogo - agora).total_seconds() / 60
 
-            # Se estiver entre 10 minutos antes e o início da partida:
-            if -90 <= diferenca_minutos <= 10:
-                if diferenca_minutos > 2:
-                    jogo["status"] = "LIVE"
-                    jogo["statusCustomizado"] = "AO VIVO • Pré-jogo (Escalação Confirmada)"
-                    jogo["status_transmissao"] = "PRE_JOGO"
-                    
-                    # Injeta a escalação do Santos na API para exibir no campinho
-                    jogo["escalacao"] = [
-                        {"posicao": "GOL", "nome": "João Paulo"},
-                        {"posicao": "LD", "nome": "Aderlan"},
-                        {"posicao": "ZAG", "nome": "Gil"},
-                        {"posicao": "ZAG", "nome": "Joaquim"},
-                        {"posicao": "LE", "nome": "Felipe Jonatan"},
-                        {"posicao": "VOL", "nome": "João Schmidt"},
-                        {"posicao": "MEI", "nome": "Diego Pituca"},
-                        {"posicao": "MEI", "nome": "Otero"},
-                        {"posicao": "ATA", "nome": "Guilherme"},
-                        {"posicao": "ATA", "nome": "Furch"},
-                        {"posicao": "ATA", "nome": "Pedrinho"}
-                    ]
-                else:
-                    jogo["status"] = "LIVE"
-                    jogo["statusCustomizado"] = "AO VIVO • 1° Tempo"
-                    jogo["status_transmissao"] = "AO_VIVO"
-                    jogo["escalacao"] = []
-        except Exception as e:
-            print(f"Erro ao processar data do jogo: {e}")
+    jogo_majestoso = {
+        "id": "sao-paulo-x-corinthians",
+        "homeTeam": {"name": "São Paulo", "logo": ESCUDOS_CLUBES["sao_paulo"]},
+        "awayTeam": {"name": "Corinthians", "logo": ESCUDOS_CLUBES["corinthians"]},
+        "date": timestamp_jogo.strftime("%d/%m/%Y"),
+        "time": timestamp_jogo.strftime("%H:%M"),
+        "timestamp_jogo": timestamp_jogo.isoformat(),
+        "score": {"fullTime": {"home": placar_home, "away": placar_away}},
+        "logo_transmissao_offline": LOGO_SITE,
+        "escalacao": []
+    }
 
-    return jogos_santos
+    status_fim_jogo = ["FINISHED", "FIN", "COMPLETED", "MATCH_FINISHED", "ENCERRADO"]
+
+    # Se a fonte externa decretou fim de jogo, encerra imediatamente
+    if status_externo in status_fim_jogo:
+        jogo_majestoso["status"] = "FINISHED"
+        jogo_majestoso["statusCustomizado"] = "FIM DE JOGO"
+        jogo_majestoso["status_transmissao"] = "OFFLINE"
+        
+    elif diferenca_minutos <= 10:
+        # Faltam 10 minutos ou o jogo já começou: ativa a aba ao vivo / player
+        jogo_majestoso["status"] = "LIVE"
+        jogo_majestoso["statusCustomizado"] = "AO VIVO • Em Andamento"
+        jogo_majestoso["status_transmissao"] = "AO_VIVO"
+    else:
+        # Mais de 10 minutos para começar: fica agendado na tela normal com a logo
+        jogo_majestoso["status"] = "SCHEDULED"
+        jogo_majestoso["statusCustomizado"] = "Agendado"
+        jogo_majestoso["status_transmissao"] = "OFFLINE"
+
+    return [jogo_majestoso]
