@@ -16,7 +16,7 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Controla o clássico São Paulo x Corinthians.
+    Controla o clássico São Paulo x Corinthians (21:30).
     Entra no ar automaticamente 10 minutos antes da partida e transmite até o fim.
     """
     
@@ -38,9 +38,9 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         placar_home = dados_api_externa.get("score_home", 0)
         placar_away = dados_api_externa.get("score_away", 0)
 
-    # DEFINA AQUI A DATA E HORA EXATA DO JOGO (Ano, Mês, Dia, Hora, Minuto)
-    # Exemplo: Jogo dia 10 de novembro de 2026 às 16:00
-    timestamp_jogo = datetime(2026, 11, 10, 16, 0, 0)
+    # Horário ajustado para as 21:30 (9:30 da noite)
+    # Altere o dia/mês/ano caso precise para a data exata do jogo
+    timestamp_jogo = datetime(2026, 11, 10, 21, 30, 0)
     agora = datetime.now()
 
     # Calcula a diferença em minutos entre o horário atual e o horário do jogo
@@ -75,6 +75,6 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         # Mais de 10 minutos para começar: fica agendado na tela normal com a logo
         jogo_majestoso["status"] = "SCHEDULED"
         jogo_majestoso["statusCustomizado"] = "Agendado"
-        jogo_majestoso["status_transmissao"] = "OFFLINE"
+        jogo__transmissao = "OFFLINE"
 
     return [jogo_majestoso]
