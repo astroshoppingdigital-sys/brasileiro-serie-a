@@ -16,8 +16,7 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Retorna a lista completa de jogos, gerindo o clássico de hoje (São Paulo x Corinthians)
-    e os próximos confrontos do Santos com os mandos de campo corretos.
+    Retorna a lista completa de jogos com os horários e locais oficiais atualizados.
     """
     
     dados_api_externa = None
@@ -40,7 +39,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
 
     agora = datetime.now()
 
-    # --- 1. CLÁSSICO DE HOJE: São Paulo x Corinthians (21:30) ---
+    # --- 1. CLÁSSICO DE HOJE: São Paulo x Corinthians (21:30 na Vila Belmiro) ---
     data_jogo_sp_cor = datetime(2026, 11, 4, 21, 30, 0)
     dif_minutos_sp = (data_jogo_sp_cor - agora).total_seconds() / 60
 
@@ -74,30 +73,16 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         jogo_majestoso["status_transmissao"] = "OFFLINE"
 
 
-    # --- 2. LISTA DE JOGOS DO SANTOS E DEMAIS PARTIDAS ---
+    # --- 2. JOGOS DA RETA FINAL (Com base na imagem oficial) ---
     jogos_cadastrados = [
         jogo_majestoso,
         {
             "id": "coritiba-santos",
-            "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},     # Fora (Couto Pereira)
+            "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},     # Couto Pereira[cite: 3]
             "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
-            "date": "10/11/2026",
-            "time": "19:00",
-            "timestamp_jogo": "2026-11-10T19:00:00",
-            "status": "SCHEDULED",
-            "statusCustomizado": "Agendado",
-            "score": {"fullTime": {"home": 0, "away": 0}},
-            "logo_transmissao_offline": LOGO_SITE,
-            "status_transmissao": "OFFLINE",
-            "escalacao": []
-        },
-        {
-            "id": "santos-botafogo",
-            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},       # Casa (Vila Belmiro)
-            "awayTeam": {"name": "Botafogo", "logo": ESCUDOS_CLUBES["botafogo"]},
-            "date": "17/11/2026",
-            "time": "20:00",
-            "timestamp_jogo": "2026-11-17T20:00:00",
+            "date": "18/11/2026",
+            "time": "19:30",[cite: 3]
+            "timestamp_jogo": "2026-11-18T19:30:00",
             "status": "SCHEDULED",
             "statusCustomizado": "Agendado",
             "score": {"fullTime": {"home": 0, "away": 0}},
@@ -107,11 +92,11 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         },
         {
             "id": "santos-gremio",
-            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},       # Casa (Vila Belmiro)
+            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},       # Morumbis[cite: 3]
             "awayTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},
-            "date": "24/11/2026",
-            "time": "21:30",
-            "timestamp_jogo": "2026-11-24T21:30:00",
+            "date": "23/11/2026",
+            "time": "21:00",[cite: 3]
+            "timestamp_jogo": "2026-11-23T21:00:00",
             "status": "SCHEDULED",
             "statusCustomizado": "Agendado",
             "score": {"fullTime": {"home": 0, "away": 0}},
@@ -121,11 +106,25 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         },
         {
             "id": "vitoria-santos",
-            "homeTeam": {"name": "Vitória", "logo": ESCUDOS_CLUBES["vitoria"]},     # Fora (Barradão)
+            "homeTeam": {"name": "Vitória", "logo": ESCUDOS_CLUBES["vitoria"]},     # Barradão[cite: 3]
             "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
             "date": "29/11/2026",
-            "time": "18:30",
-            "timestamp_jogo": "2026-11-29T18:30:00",
+            "time": "15:00",[cite: 3]
+            "timestamp_jogo": "2026-11-29T15:00:00",
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status_transmissao": "OFFLINE",
+            "escalacao": []
+        },
+        {
+            "id": "santos-botafogo",
+            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},       # Vila Belmiro[cite: 3]
+            "awayTeam": {"name": "Botafogo", "logo": ESCUDOS_CLUBES["botafogo"]},
+            "date": "02/12/2026",
+            "time": "15:00",[cite: 3]
+            "timestamp_jogo": "2026-12-02T15:00:00",
             "status": "SCHEDULED",
             "statusCustomizado": "Agendado",
             "score": {"fullTime": {"home": 0, "away": 0}},
