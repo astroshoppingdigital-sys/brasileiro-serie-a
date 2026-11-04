@@ -62,26 +62,24 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         jogo_majestoso["statusCustomizado"] = "FIM DE JOGO"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
     elif dif_minutos_sp <= 10:
-        # A partir das 21:20 de hoje, entra ao vivo
         jogo_majestoso["status"] = "LIVE"
         jogo_majestoso["statusCustomizado"] = "AO VIVO • Em Andamento"
         jogo_majestoso["status_transmissao"] = "AO_VIVO"
     else:
-        # Antes das 21:20, fica agendado
         jogo_majestoso["status"] = "SCHEDULED"
         jogo_majestoso["statusCustomizado"] = "Agendado"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
 
 
-    # --- 2. JOGOS DA RETA FINAL (Com base na imagem oficial) ---
+    # --- 2. JOGOS DA RETA FINAL ---
     jogos_cadastrados = [
         jogo_majestoso,
         {
             "id": "coritiba-santos",
-            "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},     # Couto Pereira[cite: 3]
+            "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},
             "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
             "date": "18/11/2026",
-            "time": "19:30",[cite: 3]
+            "time": "19:30",
             "timestamp_jogo": "2026-11-18T19:30:00",
             "status": "SCHEDULED",
             "statusCustomizado": "Agendado",
@@ -92,10 +90,10 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         },
         {
             "id": "santos-gremio",
-            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},       # Morumbis[cite: 3]
+            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
             "awayTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},
             "date": "23/11/2026",
-            "time": "21:00",[cite: 3]
+            "time": "21:00",
             "timestamp_jogo": "2026-11-23T21:00:00",
             "status": "SCHEDULED",
             "statusCustomizado": "Agendado",
@@ -106,10 +104,10 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         },
         {
             "id": "vitoria-santos",
-            "homeTeam": {"name": "Vitória", "logo": ESCUDOS_CLUBES["vitoria"]},     # Barradão[cite: 3]
+            "homeTeam": {"name": "Vitória", "logo": ESCUDOS_CLUBES["vitoria"]},
             "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
             "date": "29/11/2026",
-            "time": "15:00",[cite: 3]
+            "time": "15:00",
             "timestamp_jogo": "2026-11-29T15:00:00",
             "status": "SCHEDULED",
             "statusCustomizado": "Agendado",
@@ -120,10 +118,10 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         },
         {
             "id": "santos-botafogo",
-            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},       # Vila Belmiro[cite: 3]
+            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
             "awayTeam": {"name": "Botafogo", "logo": ESCUDOS_CLUBES["botafogo"]},
             "date": "02/12/2026",
-            "time": "15:00",[cite: 3]
+            "time": "15:00",
             "timestamp_jogo": "2026-12-02T15:00:00",
             "status": "SCHEDULED",
             "statusCustomizado": "Agendado",
