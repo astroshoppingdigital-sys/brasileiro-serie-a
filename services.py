@@ -16,7 +16,8 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Retorna a lista completa de jogos com os horários e locais oficiais atualizados.
+    Controla o clássico de hoje na Vila Belmiro (com transmissão até o fim e placar em tempo real)
+    e a agenda oficial dos próximos jogos.
     """
     
     dados_api_externa = None
@@ -57,15 +58,18 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         "escalacao": []
     }
 
+    # Lógica de transmissão contínua até a fonte confirmar o fim do jogo
     if status_externo in status_fim_jogo:
         jogo_majestoso["status"] = "FINISHED"
         jogo_majestoso["statusCustomizado"] = "FIM DE JOGO"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
     elif dif_minutos_sp <= 10:
+        # A partir das 21:20, entra ao vivo e transmite até o apito final
         jogo_majestoso["status"] = "LIVE"
         jogo_majestoso["statusCustomizado"] = "AO VIVO • Em Andamento"
         jogo_majestoso["status_transmissao"] = "AO_VIVO"
     else:
+        # Antes das 21:20, fica visível na aba agendados
         jogo_majestoso["status"] = "SCHEDULED"
         jogo_majestoso["statusCustomizado"] = "Agendado"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
