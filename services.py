@@ -16,8 +16,8 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Controla o clássico de hoje (São Paulo x Corinthians) com a palavra 'Hoje' no campo de data,
-    mantendo a lógica de transmissão ao vivo e placar em tempo real.
+    Controla o clássico São Paulo x Corinthians (21:30).
+    Fica em agendados (com o aviso 'Hoje') e só entra ao vivo 10 minutos antes (21:20).
     """
     
     dados_api_externa = None
@@ -40,9 +40,12 @@ def obter_jogos_serie_a(api_endpoint: str = None):
 
     agora = datetime.now()
 
-    # --- 1. CLÁSSICO DE HOJE: São Paulo x Corinthians (21:30) ---
+    # --- CLÁSSICO DE HOJE: São Paulo x Corinthians (21:30) ---
     data_jogo_sp_cor = datetime(2026, 11, 4, 21, 30, 0)
-    dif_minutos_sp = (data_jogo_sp_cor - agora).total_seconds() / 60
+    
+    # Diferença em minutos entre o horário atual e o horário do jogo
+    # Valor positivo se faltam minutos para o jogo, negativo se já passou
+    diferenca_minutos = (data_jogo_sp_cor - agora).total_seconds() / 60
 
     status_fim_jogo = ["FINISHED", "FIN", "COMPLETED", "MATCH_FINISHED", "ENCERRADO"]
 
@@ -50,7 +53,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         "id": "sao-paulo-x-corinthians",
         "homeTeam": {"name": "São Paulo", "logo": ESCUDOS_CLUBES["sao_paulo"]},
         "awayTeam": {"name": "Corinthians", "logo": ESCUDOS_CLUBES["corinthians"]},
-        "date": "Hoje",  # Exibe "Hoje" embaixo do horário conforme solicitado
+        "date": "Hoje",  # Retorna "Hoje" embaixo do horário
         "time": "21:30",
         "timestamp_jogo": data_jogo_sp_cor.isoformat(),
         "score": {"fullTime": {"home": placar_home, "away": placar_away}},
@@ -58,21 +61,30 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         "escalacao": []
     }
 
+    # Lógica estrita dos 10 minutos e fim de jogo
     if status_externo in status_fim_jogo:
+        # 1. Se a fonte externa decretou fim de jogo
         jogo_majestoso["status"] = "FINISHED"
         jogo_majestoso["statusCustomizado"] = "FIM DE JOGO"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
-    elif dif_minutos_sp <= 10:
+    elif 0 <= diferenca_minutos <= 10:
+        # 2. Faltam 10 minutos ou menos para começar (a partir das 21:20): vai para AO VIVO
+        jogo_majestoso["status"] = "LIVE"
+        jogo_majestoso["statusCustomizado"] = "AO VIVO • Em Andamento"
+        jogo_majestoso["status_transmissao"] = "AO_VIVO"
+    elif diferenca_minutos < 0 and status_externo not in status_fim_jogo:
+        # 3. O jogo já passou do horário de início mas a API ainda não disse que acabou: continua AO VIVO transmitindo até o fim
         jogo_majestoso["status"] = "LIVE"
         jogo_majestoso["statusCustomizado"] = "AO VIVO • Em Andamento"
         jogo_majestoso["status_transmissao"] = "AO_VIVO"
     else:
+        # 4. Mais de 10 minutos para começar: fica travado na aba AGENDADOS
         jogo_majestoso["status"] = "SCHEDULED"
         jogo_majestoso["statusCustomizado"] = "Agendado"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
 
 
-    # --- 2. DEMAIS JOGOS DA RETA FINAL ---
+    # --- DEMAIS JOGOS DA RETA FINAL DO SANTOS ---
     jogos_cadastrados = [
         jogo_majestoso,
         {
