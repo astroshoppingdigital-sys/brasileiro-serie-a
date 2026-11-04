@@ -16,8 +16,8 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Controla o clássico São Paulo x Corinthians para HOJE (04/11/2026) às 21:30.
-    Entra no ar 10 minutos antes (21:20) e transmite até o fim.
+    Retorna a lista completa de jogos, gerindo o clássico de hoje (São Paulo x Corinthians)
+    e os próximos confrontos do Santos com os mandos de campo corretos.
     """
     
     dados_api_externa = None
@@ -36,11 +36,11 @@ def obter_jogos_serie_a(api_endpoint: str = None):
     if dados_api_externa:
         status_externo = dados_api_externa.get("status_partida")
         placar_home = dados_api_externa.get("score_home", 0)
-        placar_away = dados_api_externa.get("score_home", 0)
+        placar_away = dados_api_externa.get("score_away", 0)
 
     agora = datetime.now()
 
-    # --- CONFIGURAÇÃO DO CLÁSSICO PARA HOJE ÀS 21:30 ---
+    # --- 1. CLÁSSICO DE HOJE: São Paulo x Corinthians (21:30) ---
     data_jogo_sp_cor = datetime(2026, 11, 4, 21, 30, 0)
     dif_minutos_sp = (data_jogo_sp_cor - agora).total_seconds() / 60
 
@@ -58,33 +58,74 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         "escalacao": []
     }
 
-    # Lógica de estados do clássico
     if status_externo in status_fim_jogo:
         jogo_majestoso["status"] = "FINISHED"
         jogo_majestoso["statusCustomizado"] = "FIM DE JOGO"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
     elif dif_minutos_sp <= 10:
-        # Faltam 10 minutos ou menos (a partir das 21:20): vai para o ar (AO VIVO)
+        # A partir das 21:20 de hoje, entra ao vivo
         jogo_majestoso["status"] = "LIVE"
         jogo_majestoso["statusCustomizado"] = "AO VIVO • Em Andamento"
         jogo_majestoso["status_transmissao"] = "AO_VIVO"
     else:
-        # Antes das 21:20: fica garantido na aba AGENDADOS
+        # Antes das 21:20, fica agendado
         jogo_majestoso["status"] = "SCHEDULED"
         jogo_majestoso["statusCustomizado"] = "Agendado"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
 
 
-    # --- OUTROS JOGOS DA AGENDA ---
+    # --- 2. LISTA DE JOGOS DO SANTOS E DEMAIS PARTIDAS ---
     jogos_cadastrados = [
         jogo_majestoso,
         {
-            "id": "santos-coritiba",
-            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
-            "awayTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},
-            "date": "15/11/2026",
-            "time": "16:00",
-            "timestamp_jogo": "2026-11-15T16:00:00",
+            "id": "coritiba-santos",
+            "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},     # Fora (Couto Pereira)
+            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "date": "10/11/2026",
+            "time": "19:00",
+            "timestamp_jogo": "2026-11-10T19:00:00",
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status_transmissao": "OFFLINE",
+            "escalacao": []
+        },
+        {
+            "id": "santos-botafogo",
+            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},       # Casa (Vila Belmiro)
+            "awayTeam": {"name": "Botafogo", "logo": ESCUDOS_CLUBES["botafogo"]},
+            "date": "17/11/2026",
+            "time": "20:00",
+            "timestamp_jogo": "2026-11-17T20:00:00",
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status_transmissao": "OFFLINE",
+            "escalacao": []
+        },
+        {
+            "id": "santos-gremio",
+            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},       # Casa (Vila Belmiro)
+            "awayTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},
+            "date": "24/11/2026",
+            "time": "21:30",
+            "timestamp_jogo": "2026-11-24T21:30:00",
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status_transmissao": "OFFLINE",
+            "escalacao": []
+        },
+        {
+            "id": "vitoria-santos",
+            "homeTeam": {"name": "Vitória", "logo": ESCUDOS_CLUBES["vitoria"]},     # Fora (Barradão)
+            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "date": "29/11/2026",
+            "time": "18:30",
+            "timestamp_jogo": "2026-11-29T18:30:00",
             "status": "SCHEDULED",
             "statusCustomizado": "Agendado",
             "score": {"fullTime": {"home": 0, "away": 0}},
