@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import requests
 
 # Dicionário de escudos dos clubes
@@ -16,8 +16,8 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Controla o clássico São Paulo x Corinthians (21:30).
-    Entra no ar automaticamente 10 minutos antes da partida e transmite até o fim.
+    Controla o clássico São Paulo x Corinthians para HOJE (04/11/2026) às 21:30.
+    Entra no ar 10 minutos antes (21:20) e transmite até o fim.
     """
     
     dados_api_externa = None
@@ -36,45 +36,62 @@ def obter_jogos_serie_a(api_endpoint: str = None):
     if dados_api_externa:
         status_externo = dados_api_externa.get("status_partida")
         placar_home = dados_api_externa.get("score_home", 0)
-        placar_away = dados_api_externa.get("score_away", 0)
+        placar_away = dados_api_externa.get("score_home", 0)
 
-    # Horário ajustado para as 21:30 (9:30 da noite)
-    # Altere o dia/mês/ano caso precise para a data exata do jogo
-    timestamp_jogo = datetime(2026, 11, 10, 21, 30, 0)
     agora = datetime.now()
 
-    # Calcula a diferença em minutos entre o horário atual e o horário do jogo
-    diferenca_minutos = (timestamp_jogo - agora).total_seconds() / 60
+    # --- CONFIGURAÇÃO DO CLÁSSICO PARA HOJE ÀS 21:30 ---
+    data_jogo_sp_cor = datetime(2026, 11, 4, 21, 30, 0)
+    dif_minutos_sp = (data_jogo_sp_cor - agora).total_seconds() / 60
+
+    status_fim_jogo = ["FINISHED", "FIN", "COMPLETED", "MATCH_FINISHED", "ENCERRADO"]
 
     jogo_majestoso = {
         "id": "sao-paulo-x-corinthians",
         "homeTeam": {"name": "São Paulo", "logo": ESCUDOS_CLUBES["sao_paulo"]},
         "awayTeam": {"name": "Corinthians", "logo": ESCUDOS_CLUBES["corinthians"]},
-        "date": timestamp_jogo.strftime("%d/%m/%Y"),
-        "time": timestamp_jogo.strftime("%H:%M"),
-        "timestamp_jogo": timestamp_jogo.isoformat(),
+        "date": "04/11/2026",
+        "time": "21:30",
+        "timestamp_jogo": data_jogo_sp_cor.isoformat(),
         "score": {"fullTime": {"home": placar_home, "away": placar_away}},
         "logo_transmissao_offline": LOGO_SITE,
         "escalacao": []
     }
 
-    status_fim_jogo = ["FINISHED", "FIN", "COMPLETED", "MATCH_FINISHED", "ENCERRADO"]
-
-    # Se a fonte externa decretou fim de jogo, encerra imediatamente
+    # Lógica de estados do clássico
     if status_externo in status_fim_jogo:
         jogo_majestoso["status"] = "FINISHED"
         jogo_majestoso["statusCustomizado"] = "FIM DE JOGO"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
-        
-    elif diferenca_minutos <= 10:
-        # Faltam 10 minutos ou o jogo já começou: ativa a aba ao vivo / player
+    elif dif_minutos_sp <= 10:
+        # Faltam 10 minutos ou menos (a partir das 21:20): vai para o ar (AO VIVO)
         jogo_majestoso["status"] = "LIVE"
         jogo_majestoso["statusCustomizado"] = "AO VIVO • Em Andamento"
         jogo_majestoso["status_transmissao"] = "AO_VIVO"
     else:
-        # Mais de 10 minutos para começar: fica agendado na tela normal com a logo
+        # Antes das 21:20: fica garantido na aba AGENDADOS
         jogo_majestoso["status"] = "SCHEDULED"
         jogo_majestoso["statusCustomizado"] = "Agendado"
-        jogo__transmissao = "OFFLINE"
+        jogo_majestoso["status_transmissao"] = "OFFLINE"
 
-    return [jogo_majestoso]
+
+    # --- OUTROS JOGOS DA AGENDA ---
+    jogos_cadastrados = [
+        jogo_majestoso,
+        {
+            "id": "santos-coritiba",
+            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "awayTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},
+            "date": "15/11/2026",
+            "time": "16:00",
+            "timestamp_jogo": "2026-11-15T16:00:00",
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status_transmissao": "OFFLINE",
+            "escalacao": []
+        }
+    ]
+
+    return jogos_cadastrados
