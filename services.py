@@ -52,6 +52,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         "awayTeam": {"name": "Corinthians", "logo": ESCUDOS_CLUBES["corinthians"]},
         "date": "04/11/2026",
         "time": "21:30",
+        "data_legenda": "Hoje",  # Informação explícita solicitada
         "timestamp_jogo": data_jogo_sp_cor.isoformat(),
         "score": {"fullTime": {"home": placar_home, "away": placar_away}},
         "logo_transmissao_offline": LOGO_SITE,
@@ -61,17 +62,17 @@ def obter_jogos_serie_a(api_endpoint: str = None):
     # Lógica de transmissão contínua até a fonte confirmar o fim do jogo
     if status_externo in status_fim_jogo:
         jogo_majestoso["status"] = "FINISHED"
-        jogo_majestoso["statusCustomizado"] = "FIM DE JOGO"
+        jogo_majestoso["statusCustomizado"] = "FIM DE JOGO\nHoje"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
     elif dif_minutos_sp <= 10:
         # A partir das 21:20, entra ao vivo e transmite até o apito final
         jogo_majestoso["status"] = "LIVE"
-        jogo_majestoso["statusCustomizado"] = "AO VIVO • Em Andamento"
+        jogo_majestoso["statusCustomizado"] = "AO VIVO • Em Andamento\nHoje"
         jogo_majestoso["status_transmissao"] = "AO_VIVO"
     else:
-        # Antes das 21:20, fica visível na aba agendados
+        # Antes das 21:20, fica visível na aba agendados com o aviso "Hoje"
         jogo_majestoso["status"] = "SCHEDULED"
-        jogo_majestoso["statusCustomizado"] = "Agendado"
+        jogo_majestoso["statusCustomizado"] = "Agendado\nHoje"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
 
 
@@ -84,6 +85,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
             "date": "18/11/2026",
             "time": "19:30",
+            "data_legenda": "18/11/2026",
             "timestamp_jogo": "2026-11-18T19:30:00",
             "status": "SCHEDULED",
             "statusCustomizado": "Agendado",
@@ -98,6 +100,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "awayTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},
             "date": "23/11/2026",
             "time": "21:00",
+            "data_legenda": "23/11/2026",
             "timestamp_jogo": "2026-11-23T21:00:00",
             "status": "SCHEDULED",
             "statusCustomizado": "Agendado",
@@ -112,6 +115,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
             "date": "29/11/2026",
             "time": "15:00",
+            "data_legenda": "29/11/2026",
             "timestamp_jogo": "2026-11-29T15:00:00",
             "status": "SCHEDULED",
             "statusCustomizado": "Agendado",
@@ -126,6 +130,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "awayTeam": {"name": "Botafogo", "logo": ESCUDOS_CLUBES["botafogo"]},
             "date": "02/12/2026",
             "time": "15:00",
+            "data_legenda": "02/12/2026",
             "timestamp_jogo": "2026-12-02T15:00:00",
             "status": "SCHEDULED",
             "statusCustomizado": "Agendado",
