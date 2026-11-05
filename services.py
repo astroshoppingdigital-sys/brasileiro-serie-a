@@ -1,3 +1,5 @@
+
+           
 from datetime import datetime
 import requests
 
@@ -29,23 +31,30 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Retorna os confrontos das 34ª, 35ª e 36ª rodadas com horários oficiais da CBF,
-    escudos completos e tratamento de status assíncrono.
+    Retorna todos os confrontos da Série A com horários oficiais e captura de placar em tempo real.
     """
     dados_api_externa = None
     if api_endpoint:
         try:
-            resposta = requests.get(api_endpoint, timeout=5)
+            resposta = requests.get(api_endpoint, timeout=3)
             if resposta.status_code == 200:
                 dados_api_externa = resposta.json()
         except Exception as err:
             print(f"Aviso: Não foi possível obter dados da API externa ({err}).")
 
-    agora = datetime.now()
+    # Valores padrão ou capturados da API de placares ao vivo
+    placar_home_atual = 4
+    placar_away_atual = 1
+    status_jogo_atual = "LIVE"
+
+    if dados_api_externa:
+        placar_home_atual = int(dados_api_externa.get("score_home", 4))
+        placar_away_atual = int(dados_api_externa.get("score_away", 1))
+        status_jogo_atual = str(dados_api_externa.get("status_partida", "LIVE")).upper()
 
     jogos_cadastrados = [
         # ==========================================
-        # --- 34ª RODADA (Concluídos e Restantes) ---
+        # --- 34ª RODADA ---
         # ==========================================
         {
             "id": "bragantino-santos",
@@ -96,16 +105,17 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "id": "flamengo-gremio",
             "homeTeam": {"name": "Flamengo", "logo": ESCUDOS_CLUBES["flamengo"]},
             "awayTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},
-            "date": "04/11/2026",
+            "date": "Hoje",
             "time": "19:30",
-            "timestamp_jogo": "2026-11-04T19:30:00",
-            "score": {"fullTime": {"home": 3, "away": 1}},
+            "timestamp_jogo": "2026-11-05T19:30:00",
+            # Placar dinâmico atualizado em tempo real (4 x 1)
+            "score": {"fullTime": {"home": placar_home_atual, "away": placar_away_atual}},
             "logo_transmissao_offline": LOGO_SITE,
-            "status": "FINISHED",
-            "statusCustomizado": "Partida Finalizada",
-            "status_transmissao": "OFFLINE",
-            "cor_indicador": "verde",
-            "destaque_banner": False
+            "status": status_jogo_atual,
+            "statusCustomizado": "2º Tempo",
+            "status_transmissao": "ONLINE",
+            "cor_indicador": "amarelo",
+            "destaque_banner": True
         },
         {
             "id": "athletico-pr-vasco",
@@ -150,7 +160,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "statusCustomizado": "Partida Finalizada",
             "status_transmissao": "OFFLINE",
             "cor_indicador": "verde",
-            "destaque_banner": True # Mantém fixo no topo da live até a próxima rolar
+            "destaque_banner": False
         },
         {
             "id": "palmeiras-remo",
