@@ -16,8 +16,8 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Controla o clássico São Paulo x Corinthians e a agenda oficial.
-    Exibe 'Partida Finalizada' (Verde), 'Intervalo' (Laranja) e '1º/2º Tempo' (Amarelo).
+    Controla o fluxo assíncrono das partidas, identificando o encerramento pela fonte de dados
+    para mover automaticamente para a aba de Encerrados com o selo verde de Partida Finalizada.
     """
     
     dados_api_externa = None
@@ -40,11 +40,12 @@ def obter_jogos_serie_a(api_endpoint: str = None):
 
     agora = datetime.now()
 
-    # --- CLÁSSICO DE HOJE: São Paulo x Corinthians (21:30) ---
+    # --- 1. CLÁSSICO: São Paulo x Corinthians ---
     data_jogo_sp_cor = datetime(2026, 11, 4, 21, 30, 0)
     diferenca_minutos = (data_jogo_sp_cor - agora).total_seconds() / 60
 
-    status_fim_jogo = ["FINISHED", "FIN", "COMPLETED", "MATCH_FINISHED", "ENCERRADO"]
+    # Lista abrangente de termos que a API externa pode retornar para indicar fim de jogo
+    status_fim_jogo = ["FINISHED", "FIN", "COMPLETED", "MATCH_FINISHED", "ENCERRADO", "FT", "FULL_TIME"]
     status_intervalo = ["HT", "HALFTIME", "INTERVALO", "INT"]
     status_segundo_tempo = ["2H", "SECOND_HALF", "2º TEMPO"]
 
@@ -60,8 +61,9 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         "escalacao": []
     }
 
-    # Lógica atualizada com o texto 'Partida Finalizada'
-    if status_externo in status_fim_jogo:
+    # Verificação estrita baseada na resposta da fonte de dados (API)
+    if status_externo in status_fim_jogo or (agora.date() > data_jogo_sp_cor.date()):
+        # Se a API retornou fim de jogo OU o dia atual já passou da data da partida, força o encerramento
         jogo_majestoso["status"] = "FINISHED"
         jogo_majestoso["statusCustomizado"] = "Partida Finalizada"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
@@ -92,7 +94,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         jogo_majestoso["cor_indicador"] = "cinza"
 
 
-    # --- DEMAIS JOGOS DA RETA FINAL DO SANTOS ---
+    # --- 2. DEMAIS JOGOS DA RETA FINAL DO SANTOS ---
     jogos_cadastrados = [
         jogo_majestoso,
         {
