@@ -16,8 +16,8 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Controla o clássico São Paulo x Corinthians (21:30).
-    Fica em agendados (com o aviso 'Hoje') e só entra ao vivo 10 minutos antes (21:20).
+    Controla o clássico São Paulo x Corinthians e a agenda oficial.
+    Exibe 'Partida Finalizada' (Verde), 'Intervalo' (Laranja) e '1º/2º Tempo' (Amarelo).
     """
     
     dados_api_externa = None
@@ -34,7 +34,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
     placar_away = 0
 
     if dados_api_externa:
-        status_externo = dados_api_externa.get("status_partida")
+        status_externo = str(dados_api_externa.get("status_partida", "")).upper()
         placar_home = dados_api_externa.get("score_home", 0)
         placar_away = dados_api_externa.get("score_away", 0)
 
@@ -42,18 +42,17 @@ def obter_jogos_serie_a(api_endpoint: str = None):
 
     # --- CLÁSSICO DE HOJE: São Paulo x Corinthians (21:30) ---
     data_jogo_sp_cor = datetime(2026, 11, 4, 21, 30, 0)
-    
-    # Diferença em minutos entre o horário atual e o horário do jogo
-    # Valor positivo se faltam minutos para o jogo, negativo se já passou
     diferenca_minutos = (data_jogo_sp_cor - agora).total_seconds() / 60
 
     status_fim_jogo = ["FINISHED", "FIN", "COMPLETED", "MATCH_FINISHED", "ENCERRADO"]
+    status_intervalo = ["HT", "HALFTIME", "INTERVALO", "INT"]
+    status_segundo_tempo = ["2H", "SECOND_HALF", "2º TEMPO"]
 
     jogo_majestoso = {
         "id": "sao-paulo-x-corinthians",
         "homeTeam": {"name": "São Paulo", "logo": ESCUDOS_CLUBES["sao_paulo"]},
         "awayTeam": {"name": "Corinthians", "logo": ESCUDOS_CLUBES["corinthians"]},
-        "date": "Hoje",  # Retorna "Hoje" embaixo do horário
+        "date": "Hoje",
         "time": "21:30",
         "timestamp_jogo": data_jogo_sp_cor.isoformat(),
         "score": {"fullTime": {"home": placar_home, "away": placar_away}},
@@ -61,27 +60,36 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         "escalacao": []
     }
 
-    # Lógica estrita dos 10 minutos e fim de jogo
+    # Lógica atualizada com o texto 'Partida Finalizada'
     if status_externo in status_fim_jogo:
-        # 1. Se a fonte externa decretou fim de jogo
         jogo_majestoso["status"] = "FINISHED"
-        jogo_majestoso["statusCustomizado"] = "FIM DE JOGO"
+        jogo_majestoso["statusCustomizado"] = "Partida Finalizada"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
-    elif 0 <= diferenca_minutos <= 10:
-        # 2. Faltam 10 minutos ou menos para começar (a partir das 21:20): vai para AO VIVO
+        jogo_majestoso["cor_indicador"] = "verde"
+        
+    elif status_externo in status_intervalo:
         jogo_majestoso["status"] = "LIVE"
-        jogo_majestoso["statusCustomizado"] = "AO VIVO • Em Andamento"
+        jogo_majestoso["statusCustomizado"] = "Intervalo"
         jogo_majestoso["status_transmissao"] = "AO_VIVO"
-    elif diferenca_minutos < 0 and status_externo not in status_fim_jogo:
-        # 3. O jogo já passou do horário de início mas a API ainda não disse que acabou: continua AO VIVO transmitindo até o fim
+        jogo_majestoso["cor_indicador"] = "laranja"
+        
+    elif 0 <= diferenca_minutos <= 10 or (diferenca_minutos < 0 and status_externo not in status_fim_jogo):
         jogo_majestoso["status"] = "LIVE"
-        jogo_majestoso["statusCustomizado"] = "AO VIVO • Em Andamento"
+        
+        if status_externo in status_segundo_tempo:
+            texto_periodo = "2º Tempo"
+        else:
+            texto_periodo = "1º Tempo"
+            
+        jogo_majestoso["statusCustomizado"] = texto_periodo
         jogo_majestoso["status_transmissao"] = "AO_VIVO"
+        jogo_majestoso["cor_indicador"] = "amarelo"
+        
     else:
-        # 4. Mais de 10 minutos para começar: fica travado na aba AGENDADOS
         jogo_majestoso["status"] = "SCHEDULED"
         jogo_majestoso["statusCustomizado"] = "Agendado"
         jogo_majestoso["status_transmissao"] = "OFFLINE"
+        jogo_majestoso["cor_indicador"] = "cinza"
 
 
     # --- DEMAIS JOGOS DA RETA FINAL DO SANTOS ---
@@ -99,6 +107,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "score": {"fullTime": {"home": 0, "away": 0}},
             "logo_transmissao_offline": LOGO_SITE,
             "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
             "escalacao": []
         },
         {
@@ -113,6 +122,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "score": {"fullTime": {"home": 0, "away": 0}},
             "logo_transmissao_offline": LOGO_SITE,
             "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
             "escalacao": []
         },
         {
@@ -127,6 +137,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "score": {"fullTime": {"home": 0, "away": 0}},
             "logo_transmissao_offline": LOGO_SITE,
             "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
             "escalacao": []
         },
         {
@@ -141,6 +152,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "score": {"fullTime": {"home": 0, "away": 0}},
             "logo_transmissao_offline": LOGO_SITE,
             "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
             "escalacao": []
         }
     ]
