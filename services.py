@@ -16,8 +16,8 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a(api_endpoint: str = None):
     """
-    Controla o fluxo assíncrono das partidas, identificando o encerramento pela fonte de dados
-    para mover automaticamente para a aba de Encerrados com o selo verde de Partida Finalizada.
+    Controla o fluxo dos jogos e define dinamicamente a partida em destaque para o banner superior da live.
+    Prioriza o jogo AO VIVO; se nenhum estiver rolando, exibe a última partida finalizada (ex: São Paulo x Corinthians).
     """
     
     dados_api_externa = None
@@ -40,61 +40,28 @@ def obter_jogos_serie_a(api_endpoint: str = None):
 
     agora = datetime.now()
 
-    # --- 1. CLÁSSICO: São Paulo x Corinthians ---
+    # --- 1. SÃO PAULO x CORINTHIANS (Ontem / Encerrado com 0x0) ---
     data_jogo_sp_cor = datetime(2026, 11, 4, 21, 30, 0)
-    diferenca_minutos = (data_jogo_sp_cor - agora).total_seconds() / 60
-
-    # Lista abrangente de termos que a API externa pode retornar para indicar fim de jogo
-    status_fim_jogo = ["FINISHED", "FIN", "COMPLETED", "MATCH_FINISHED", "ENCERRADO", "FT", "FULL_TIME"]
-    status_intervalo = ["HT", "HALFTIME", "INTERVALO", "INT"]
-    status_segundo_tempo = ["2H", "SECOND_HALF", "2º TEMPO"]
-
+    
     jogo_majestoso = {
         "id": "sao-paulo-x-corinthians",
         "homeTeam": {"name": "São Paulo", "logo": ESCUDOS_CLUBES["sao_paulo"]},
         "awayTeam": {"name": "Corinthians", "logo": ESCUDOS_CLUBES["corinthians"]},
-        "date": "Hoje",
+        "date": "Ontem",
         "time": "21:30",
         "timestamp_jogo": data_jogo_sp_cor.isoformat(),
-        "score": {"fullTime": {"home": placar_home, "away": placar_away}},
+        # Placar registrado de ontem (0 x 0)
+        "score": {"fullTime": {"home": 0, "away": 0}},
         "logo_transmissao_offline": LOGO_SITE,
-        "escalacao": []
+        "status": "FINISHED",
+        "statusCustomizado": "Partida Finalizada",
+        "status_transmissao": "OFFLINE",
+        "cor_indicador": "verde",
+        "destaque_banner": True  # Fica no banner principal como último jogo concluído quando não houver live
     }
 
-    # Verificação estrita baseada na resposta da fonte de dados (API)
-    if status_externo in status_fim_jogo or (agora.date() > data_jogo_sp_cor.date()):
-        # Se a API retornou fim de jogo OU o dia atual já passou da data da partida, força o encerramento
-        jogo_majestoso["status"] = "FINISHED"
-        jogo_majestoso["statusCustomizado"] = "Partida Finalizada"
-        jogo_majestoso["status_transmissao"] = "OFFLINE"
-        jogo_majestoso["cor_indicador"] = "verde"
-        
-    elif status_externo in status_intervalo:
-        jogo_majestoso["status"] = "LIVE"
-        jogo_majestoso["statusCustomizado"] = "Intervalo"
-        jogo_majestoso["status_transmissao"] = "AO_VIVO"
-        jogo_majestoso["cor_indicador"] = "laranja"
-        
-    elif 0 <= diferenca_minutos <= 10 or (diferenca_minutos < 0 and status_externo not in status_fim_jogo):
-        jogo_majestoso["status"] = "LIVE"
-        
-        if status_externo in status_segundo_tempo:
-            texto_periodo = "2º Tempo"
-        else:
-            texto_periodo = "1º Tempo"
-            
-        jogo_majestoso["statusCustomizado"] = texto_periodo
-        jogo_majestoso["status_transmissao"] = "AO_VIVO"
-        jogo_majestoso["cor_indicador"] = "amarelo"
-        
-    else:
-        jogo_majestoso["status"] = "SCHEDULED"
-        jogo_majestoso["statusCustomizado"] = "Agendado"
-        jogo_majestoso["status_transmissao"] = "OFFLINE"
-        jogo_majestoso["cor_indicador"] = "cinza"
 
-
-    # --- 2. DEMAIS JOGOS DA RETA FINAL DO SANTOS ---
+    # --- 2. DEMAIS JOGOS DA RETA FINAL ---
     jogos_cadastrados = [
         jogo_majestoso,
         {
@@ -110,6 +77,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "logo_transmissao_offline": LOGO_SITE,
             "status_transmissao": "OFFLINE",
             "cor_indicador": "cinza",
+            "destaque_banner": False,
             "escalacao": []
         },
         {
@@ -125,6 +93,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "logo_transmissao_offline": LOGO_SITE,
             "status_transmissao": "OFFLINE",
             "cor_indicador": "cinza",
+            "destaque_banner": False,
             "escalacao": []
         },
         {
@@ -140,6 +109,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "logo_transmissao_offline": LOGO_SITE,
             "status_transmissao": "OFFLINE",
             "cor_indicador": "cinza",
+            "destaque_banner": False,
             "escalacao": []
         },
         {
@@ -155,6 +125,7 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "logo_transmissao_offline": LOGO_SITE,
             "status_transmissao": "OFFLINE",
             "cor_indicador": "cinza",
+            "destaque_banner": False,
             "escalacao": []
         }
     ]
