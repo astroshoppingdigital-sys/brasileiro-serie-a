@@ -1,5 +1,3 @@
-
-           
 from datetime import datetime
 import requests
 
@@ -169,12 +167,12 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "date": "05/11/2026",
             "time": "19:30",
             "timestamp_jogo": "2026-11-05T19:30:00",
-            "score": {"fullTime": {"home": 0, "away": 0}},
+            "score": {"fullTime": {"home": 6, "away": 1}},
             "logo_transmissao_offline": LOGO_SITE,
-            "status": "SCHEDULED",
-            "statusCustomizado": "Agendado",
+            "status": "FINISHED",
+            "statusCustomizado": "Partida Finalizada",
             "status_transmissao": "OFFLINE",
-            "cor_indicador": "cinza",
+            "cor_indicador": "verde",
             "destaque_banner": False
         },
         {
