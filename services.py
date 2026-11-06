@@ -1,7 +1,7 @@
 from datetime import datetime
 import requests
 
-# Dicionário de escudos dos clubes
+# Dicionário de escudos dos clubes (com Palmeiras e Remo atualizados)
 ESCUDOS_CLUBES = {
     "santos": "https://i.postimg.cc/j2tjm9P0/santos-fc.png",
     "sao_paulo": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Brasao_do_Sao_Paulo_Futebol_Clube.svg/1200px-Brasao_do_Sao_Paulo_Futebol_Clube.svg.png",
@@ -18,8 +18,8 @@ ESCUDOS_CLUBES = {
     "athletico_pr": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Athletico_Paranaense_logo_2019.svg/1200px-Athletico_Paranaense_logo_2019.svg.png",
     "atletico_mg": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Atletico_mineiro_galo.svg/1200px-Atletico_mineiro_galo.svg.png",
     "vasco": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Vasco_da_Gama_logo.svg/1200px-Vasco_da_Gama_logo.svg.png",
-    "palmeiras": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/10/Palmeiras_logo.svg/1200px-Palmeiras_logo.svg.png",
-    "remo": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/Clube_do_Remo_logo.svg/1200px-Clube_do_Remo_logo.svg.png",
+    "palmeiras": "https://i.postimg.cc/qMXDNBzY/palmeiras.png",
+    "remo": "https://i.postimg.cc/sD7dwR1R/Clube-do-Remo-svg.webp",
     "cruzeiro": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Cruzeiro_Esporte_Clube_%28logo%29.svg/1200px-Cruzeiro_Esporte_Clube_%28logo%29.svg.png",
     "bahia": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Esporte_Clube_Bahia_logo.svg/1200px-Esporte_Clube_Bahia_logo.svg.png",
     "fluminense": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Fluminense_FC_escudo.svg/1200px-Fluminense_FC_escudo.svg.png"
@@ -28,9 +28,6 @@ ESCUDOS_CLUBES = {
 LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rhozi-removebg-preview.png"
 
 def obter_jogos_serie_a(api_endpoint: str = None):
-    """
-    Retorna todos os confrontos da Série A com horários oficiais e captura de placar em tempo real.
-    """
     dados_api_externa = None
     if api_endpoint:
         try:
@@ -40,7 +37,6 @@ def obter_jogos_serie_a(api_endpoint: str = None):
         except Exception as err:
             print(f"Aviso: Não foi possível obter dados da API externa ({err}).")
 
-    # Valores padrão ou capturados da API de placares ao vivo
     placar_home_atual = 4
     placar_away_atual = 1
     status_jogo_atual = "LIVE"
@@ -106,7 +102,6 @@ def obter_jogos_serie_a(api_endpoint: str = None):
             "date": "Hoje",
             "time": "19:30",
             "timestamp_jogo": "2026-11-05T19:30:00",
-            # Placar dinâmico atualizado em tempo real (4 x 1)
             "score": {"fullTime": {"home": placar_home_atual, "away": placar_away_atual}},
             "logo_transmissao_offline": LOGO_SITE,
             "status": status_jogo_atual,
