@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests
 
 ESCUDOS_CLUBES = {
@@ -26,14 +26,25 @@ ESCUDOS_CLUBES = {
 
 LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rhozi-removebg-preview.png"
 
+def calcular_data_amigavel(data_str, hora_str):
+    try:
+        data_jogo = datetime.strptime(f"{data_str} {hora_str}", "%d/%m/%Y %H:%M")
+        agora = datetime.now()
+        diff = data_jogo - agora
+        if timedelta(0) <= diff <= timedelta(hours=24):
+            return "Amanhã"
+    except Exception:
+        pass
+    return data_str
+
 def obter_jogos_serie_a():
-    jogos_cadastrados = [
-        # Jogos passados já finalizados corretamente na aba Encerrados (Azul Gelo)
+    lista_crua = [
+        # --- JOGOS JÁ FINALIZADOS (ABAIXO DA ABA ENCERRADOS) ---
         {
             "id": "sao-paulo-corinthians",
             "homeTeam": {"name": "São Paulo", "logo": ESCUDOS_CLUBES["sao_paulo"]},
             "awayTeam": {"name": "Corinthians", "logo": ESCUDOS_CLUBES["corinthians"]},
-            "date": "Ontem",
+            "date": "04/11/2026",
             "time": "21:30",
             "score": {"fullTime": {"home": 0, "away": 0}},
             "logo_transmissao_offline": LOGO_SITE,
@@ -58,31 +69,14 @@ def obter_jogos_serie_a():
             "destaque_banner": False
         },
 
-        # --- JOGOS DO SANTOS (FORA E NA VILA) NOS AGENDADOS ---
-        # Jogo fora: Vitória x Santos
-        {
-            "id": "vitoria-santos",
-            "homeTeam": {"name": "Vitória", "logo": ESCUDOS_CLUBES["vitoria"]},
-            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
-            "date": "30/11/2026",
-            "time": "20:00",
-            "timestamp_jogo": "2026-11-30T20:00:00",
-            "score": {"fullTime": {"home": 0, "away": 0}},
-            "logo_transmissao_offline": LOGO_SITE,
-            "status": "SCHEDULED",
-            "statusCustomizado": "Agendado",
-            "status_transmissao": "OFFLINE",
-            "cor_indicador": "cinza",
-            "destaque_banner": False
-        },
-        # Jogo fora: Coritiba x Santos
+        # --- JOGOS DO SANTOS (EM DESTAQUE NAS RODOTAS) ---
         {
             "id": "coritiba-santos",
             "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},
             "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
             "date": "18/11/2026",
             "time": "19:30",
-            "timestamp_jogo": "2026-11-18T19:30:00",
+            "stadium": "Couto Pereira",
             "score": {"fullTime": {"home": 0, "away": 0}},
             "logo_transmissao_offline": LOGO_SITE,
             "status": "SCHEDULED",
@@ -91,14 +85,303 @@ def obter_jogos_serie_a():
             "cor_indicador": "cinza",
             "destaque_banner": False
         },
-        # Jogo na Vila (Santos mandante): Santos x Grêmio
         {
             "id": "santos-gremio",
             "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
             "awayTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},
             "date": "23/11/2026",
             "time": "21:00",
-            "timestamp_jogo": "2026-11-23T21:00:00",
+            "stadium": "Vila Belmiro",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "vitoria-santos",
+            "homeTeam": {"name": "Vitória", "logo": ESCUDOS_CLUBES["vitoria"]},
+            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "date": "29/11/2026",
+            "time": "15:00",
+            "stadium": "Barradão",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "santos-botafogo",
+            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "awayTeam": {"name": "Botafogo", "logo": ESCUDOS_CLUBES["botafogo"]},
+            "date": "06/12/2026",
+            "time": "15:00",
+            "stadium": "Vila Belmiro",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+
+        # ==========================================
+        # --- 37ª RODADA (29 de novembro de 2026) ---
+        # ==========================================
+        {
+            "id": "fluminense-cruzeiro",
+            "homeTeam": {"name": "Fluminense", "logo": ESCUDOS_CLUBES["fluminense"]},
+            "awayTeam": {"name": "Cruzeiro", "logo": ESCUDOS_CLUBES["cruzeiro"]},
+            "date": "29/11/2026",
+            "time": "18:30",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "botafogo-bahia",
+            "homeTeam": {"name": "Botafogo", "logo": ESCUDOS_CLUBES["botafogo"]},
+            "awayTeam": {"name": "Bahia", "logo": ESCUDOS_CLUBES["bahia"]},
+            "date": "29/11/2026",
+            "time": "18:30",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "sao-paulo-remo",
+            "homeTeam": {"name": "São Paulo", "logo": ESCUDOS_CLUBES["sao_paulo"]},
+            "awayTeam": {"name": "Remo", "logo": ESCUDOS_CLUBES["remo"]},
+            "date": "29/11/2026",
+            "time": "19:30",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "corinthians-gremio",
+            "homeTeam": {"name": "Corinthians", "logo": ESCUDOS_CLUBES["corinthians"]},
+            "awayTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},
+            "date": "29/11/2026",
+            "time": "20:30",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "mirassol-athletico-pr",
+            "homeTeam": {"name": "Mirassol", "logo": ESCUDOS_CLUBES["mirassol"]},
+            "awayTeam": {"name": "Athletico-PR", "logo": ESCUDOS_CLUBES["athletico_pr"]},
+            "date": "29/11/2026",
+            "time": "21:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "atletico-mg-vasco",
+            "homeTeam": {"name": "Atlético-MG", "logo": ESCUDOS_CLUBES["atletico_mg"]},
+            "awayTeam": {"name": "Vasco", "logo": ESCUDOS_CLUBES["vasco"]},
+            "date": "30/11/2026",
+            "time": "16:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "internacional-bragantino",
+            "homeTeam": {"name": "Internacional", "logo": ESCUDOS_CLUBES["internacional"]},
+            "awayTeam": {"name": "Red Bull Bragantino", "logo": ESCUDOS_CLUBES["bragantino"]},
+            "date": "30/11/2026",
+            "time": "18:30",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "coritiba-flamengo",
+            "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},
+            "awayTeam": {"name": "Flamengo", "logo": ESCUDOS_CLUBES["flamengo"]},
+            "date": "30/11/2026",
+            "time": "19:30",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "chapecoense-palmeiras",
+            "homeTeam": {"name": "Chapecoense", "logo": ESCUDOS_CLUBES["chapecoense"]},
+            "awayTeam": {"name": "Palmeiras", "logo": ESCUDOS_CLUBES["palmeiras"]},
+            "date": "30/11/2026",
+            "time": "21:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+
+        # ==========================================
+        # --- 38ª RODADA (06 de dezembro de 2026) ---
+        # ==========================================
+        {
+            "id": "flamengo-chapecoense",
+            "homeTeam": {"name": "Flamengo", "logo": ESCUDOS_CLUBES["flamengo"]},
+            "awayTeam": {"name": "Chapecoense", "logo": ESCUDOS_CLUBES["chapecoense"]},
+            "date": "06/12/2026",
+            "time": "16:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "vasco-vitoria",
+            "homeTeam": {"name": "Vasco", "logo": ESCUDOS_CLUBES["vasco"]},
+            "awayTeam": {"name": "Vitória", "logo": ESCUDOS_CLUBES["vitoria"]},
+            "date": "06/12/2026",
+            "time": "16:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "palmeiras-coritiba",
+            "homeTeam": {"name": "Palmeiras", "logo": ESCUDOS_CLUBES["palmeiras"]},
+            "awayTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},
+            "date": "06/12/2026",
+            "time": "16:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "bragantino-fluminense",
+            "homeTeam": {"name": "Red Bull Bragantino", "logo": ESCUDOS_CLUBES["bragantino"]},
+            "awayTeam": {"name": "Fluminense", "logo": ESCUDOS_CLUBES["fluminense"]},
+            "date": "06/12/2026",
+            "time": "16:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "cruzeiro-internacional",
+            "homeTeam": {"name": "Cruzeiro", "logo": ESCUDOS_CLUBES["cruzeiro"]},
+            "awayTeam": {"name": "Internacional", "logo": ESCUDOS_CLUBES["internacional"]},
+            "date": "06/12/2026",
+            "time": "16:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "gremio-mirassol",
+            "homeTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},
+            "awayTeam": {"name": "Mirassol", "logo": ESCUDOS_CLUBES["mirassol"]},
+            "date": "06/12/2026",
+            "time": "16:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "athletico-pr-sao-paulo",
+            "homeTeam": {"name": "Athletico-PR", "logo": ESCUDOS_CLUBES["athletico_pr"]},
+            "awayTeam": {"name": "São Paulo", "logo": ESCUDOS_CLUBES["sao_paulo"]},
+            "date": "06/12/2026",
+            "time": "16:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "remo-corinthians",
+            "homeTeam": {"name": "Remo", "logo": ESCUDOS_CLUBES["remo"]},
+            "awayTeam": {"name": "Corinthians", "logo": ESCUDOS_CLUBES["corinthians"]},
+            "date": "06/12/2026",
+            "time": "16:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        {
+            "id": "bahia-atletico-mg",
+            "homeTeam": {"name": "Bahia", "logo": ESCUDOS_CLUBES["bahia"]},
+            "awayTeam": {"name": "Atlético-MG", "logo": ESCUDOS_CLUBES["atletico_mg"]},
+            "date": "06/12/2026",
+            "time": "16:00",
             "score": {"fullTime": {"home": 0, "away": 0}},
             "logo_transmissao_offline": LOGO_SITE,
             "status": "SCHEDULED",
@@ -109,4 +392,9 @@ def obter_jogos_serie_a():
         }
     ]
 
-    return jogos_cadastrados
+    # Aplica a regra de trocar a data para "Amanhã" quando faltar 24 horas
+    for jogo in lista_crua:
+        if jogo["status"] == "SCHEDULED":
+            jogo["date"] = calcular_data_amigavel(jogo["date"], jogo["time"])
+
+    return lista_crua
