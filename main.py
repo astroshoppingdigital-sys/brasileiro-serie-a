@@ -26,12 +26,12 @@ def home():
         "endpoint_jogos": "/jogos/serie-a"
     }
 
-# Endpoint padrão mantido do seu projeto
+# Endpoint padrão do seu projeto
 @app.get("/jogos/serie-a")
 def listar_jogos_serie_a():
     return obter_jogos_serie_a()
 
-# Endpoint padrão genérico para compatibilidade
+# Endpoint genérico para compatibilidade
 @app.get("/api/jogos")
 def listar_jogos_api():
     return obter_jogos_serie_a()
