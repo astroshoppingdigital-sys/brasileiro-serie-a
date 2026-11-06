@@ -28,22 +28,21 @@ LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rho
 
 def obter_jogos_serie_a():
     jogos_cadastrados = [
-        # Jogo com regras dinâmicas de andamento / cronômetro real
+        # Jogos passados já finalizados corretamente na aba Encerrados (Azul Gelo)
         {
-            "id": "flamengo-gremio",
-            "homeTeam": {"name": "Flamengo", "logo": ESCUDOS_CLUBES["flamengo"]},
-            "awayTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},
-            "date": "Hoje",
-            "time": "19:30",
-            "score": {"fullTime": {"home": 2, "away": 1}},
+            "id": "sao-paulo-corinthians",
+            "homeTeam": {"name": "São Paulo", "logo": ESCUDOS_CLUBES["sao_paulo"]},
+            "awayTeam": {"name": "Corinthians", "logo": ESCUDOS_CLUBES["corinthians"]},
+            "date": "Ontem",
+            "time": "21:30",
+            "score": {"fullTime": {"home": 0, "away": 0}},
             "logo_transmissao_offline": LOGO_SITE,
-            "status": "LIVE",
-            "statusCustomizado": "2º Tempo - 78'",
-            "status_transmissao": "ONLINE",
-            "cor_indicador": "verde-abacate",
-            "destaque_banner": True
+            "status": "FINISHED",
+            "statusCustomizado": "Partida Finalizada",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "azul-gelo",
+            "destaque_banner": False
         },
-        # Jogo Palmeiras x Remo travado e finalizado no Azul Gelo
         {
             "id": "palmeiras-remo",
             "homeTeam": {"name": "Palmeiras", "logo": ESCUDOS_CLUBES["palmeiras"]},
@@ -58,22 +57,56 @@ def obter_jogos_serie_a():
             "cor_indicador": "azul-gelo",
             "destaque_banner": False
         },
-        # Exemplo de jogo no Intervalo (Laranja)
+
+        # --- JOGOS DO SANTOS (FORA E NA VILA) NOS AGENDADOS ---
+        # Jogo fora: Vitória x Santos
         {
-            "id": "sao-paulo-corinthians",
-            "homeTeam": {"name": "São Paulo", "logo": ESCUDOS_CLUBES["sao_paulo"]},
-            "awayTeam": {"name": "Corinthians", "logo": ESCUDOS_CLUBES["corinthians"]},
-            "date": "Hoje",
-            "time": "21:30",
+            "id": "vitoria-santos",
+            "homeTeam": {"name": "Vitória", "logo": ESCUDOS_CLUBES["vitoria"]},
+            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "date": "30/11/2026",
+            "time": "20:00",
+            "timestamp_jogo": "2026-11-30T20:00:00",
             "score": {"fullTime": {"home": 0, "away": 0}},
             "logo_transmissao_offline": LOGO_SITE,
-            "status": "HT",
-            "statusCustomizado": "Intervalo em descanso",
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
             "status_transmissao": "OFFLINE",
-            "cor_indicador": "laranja",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        # Jogo fora: Coritiba x Santos
+        {
+            "id": "coritiba-santos",
+            "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},
+            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "date": "18/11/2026",
+            "time": "19:30",
+            "timestamp_jogo": "2026-11-18T19:30:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+        # Jogo na Vila (Santos mandante): Santos x Grêmio
+        {
+            "id": "santos-gremio",
+            "homeTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "awayTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},
+            "date": "23/11/2026",
+            "time": "21:00",
+            "timestamp_jogo": "2026-11-23T21:00:00",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
             "destaque_banner": False
         }
-        # Demais partidas agendadas seguem o padrão...
     ]
 
     return jogos_cadastrados
