@@ -39,7 +39,7 @@ def calcular_data_amigavel(data_str, hora_str):
 
 def obter_jogos_serie_a():
     lista_crua = [
-        # --- JOGOS JÁ FINALIZADOS (ABAIXO DA ABA ENCERRADOS) ---
+        # --- JOGOS JÁ FINALIZADOS ---
         {
             "id": "sao-paulo-corinthians",
             "homeTeam": {"name": "São Paulo", "logo": ESCUDOS_CLUBES["sao_paulo"]},
@@ -68,8 +68,22 @@ def obter_jogos_serie_a():
             "cor_indicador": "azul-gelo",
             "destaque_banner": False
         },
+        {
+            "id": "cruzeiro-bahia",
+            "homeTeam": {"name": "Cruzeiro", "logo": ESCUDOS_CLUBES["cruzeiro"]},
+            "awayTeam": {"name": "Bahia", "logo": ESCUDOS_CLUBES["bahia"]},
+            "date": "05/11/2026",
+            "time": "21:30",
+            "score": {"fullTime": {"home": 3, "away": 2}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "FINISHED",
+            "statusCustomizado": "Partida Finalizada",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "azul-gelo",
+            "destaque_banner": False
+        },
 
-        # --- JOGOS DO SANTOS (EM DESTAQUE NAS RODOTAS) ---
+        # --- JOGOS DO SANTOS ---
         {
             "id": "coritiba-santos",
             "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},
@@ -132,7 +146,7 @@ def obter_jogos_serie_a():
         },
 
         # ==========================================
-        # --- 37ª RODADA (29 de novembro de 2026) ---
+        # --- 37ª RODADA ---
         # ==========================================
         {
             "id": "fluminense-cruzeiro",
@@ -262,7 +276,7 @@ def obter_jogos_serie_a():
         },
 
         # ==========================================
-        # --- 38ª RODADA (06 de dezembro de 2026) ---
+        # --- 38ª RODADA ---
         # ==========================================
         {
             "id": "flamengo-chapecoense",
@@ -392,7 +406,6 @@ def obter_jogos_serie_a():
         }
     ]
 
-    # Aplica a regra de trocar a data para "Amanhã" quando faltar 24 horas
     for jogo in lista_crua:
         if jogo["status"] == "SCHEDULED":
             jogo["date"] = calcular_data_amigavel(jogo["date"], jogo["time"])
