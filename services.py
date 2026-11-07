@@ -83,14 +83,14 @@ def obter_jogos_serie_a():
             "destaque_banner": False
         },
 
-        # --- JOGOS DO SANTOS ---
+        # --- JOGOS DO SANTOS E DESTAQUES ---
         {
-            "id": "coritiba-santos",
-            "homeTeam": {"name": "Coritiba", "logo": ESCUDOS_CLUBES["coritiba"]},
-            "awayTeam": {"name": "Santos", "logo": ESCUDOS_CLUBES["santos"]},
+            "id": "vitoria-bragantino",
+            "homeTeam": {"name": "Vitória", "logo": ESCUDOS_CLUBES["vitoria"]},
+            "awayTeam": {"name": "Red Bull Bragantino", "logo": ESCUDOS_CLUBES["bragantino"]},
             "date": "18/11/2026",
             "time": "19:30",
-            "stadium": "Couto Pereira",
+            "stadium": "Barradão",
             "score": {"fullTime": {"home": 0, "away": 0}},
             "logo_transmissao_offline": LOGO_SITE,
             "status": "SCHEDULED",
@@ -136,6 +136,25 @@ def obter_jogos_serie_a():
             "date": "06/12/2026",
             "time": "15:00",
             "stadium": "Vila Belmiro",
+            "score": {"fullTime": {"home": 0, "away": 0}},
+            "logo_transmissao_offline": LOGO_SITE,
+            "status": "SCHEDULED",
+            "statusCustomizado": "Agendado",
+            "status_transmissao": "OFFLINE",
+            "cor_indicador": "cinza",
+            "destaque_banner": False
+        },
+
+        # ==========================================
+        # --- 35ª RODADA (Incluindo Grêmio x Bahia) ---
+        # ==========================================
+        {
+            "id": "gremio-bahia",
+            "homeTeam": {"name": "Grêmio", "logo": ESCUDOS_CLUBES["gremio"]},
+            "awayTeam": {"name": "Bahia", "logo": ESCUDOS_CLUBES["bahia"]},
+            "date": "18/11/2026",
+            "time": "21:30",
+            "stadium": "Arena do Grêmio",
             "score": {"fullTime": {"home": 0, "away": 0}},
             "logo_transmissao_offline": LOGO_SITE,
             "status": "SCHEDULED",
