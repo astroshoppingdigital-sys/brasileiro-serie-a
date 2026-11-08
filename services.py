@@ -1,19 +1,24 @@
 from datetime import datetime, timezone, timedelta
-import requests
+import urllib.request
+import json
 
 # Definição do fuso horário de Brasília (UTC-3)
 BRT = timezone(timedelta(hours=-3))
 
 def get_espn_scoreboard(league="bra.1"):
     """
-    Busca os dados de placares ao vivo da API da ESPN para a liga especificada.
-    Padrão: bra.1 (Série A)
+    Busca os dados de placares ao vivo da API da ESPN usando urllib 
+    para garantir compatibilidade nativa sem dependências externas.
     """
     url = f"https://site.web.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard"
     try:
-        response = requests.get(url, timeout=10)
-        if response.status_code == 200:
-            return response.json()
+        req = urllib.request.Request(
+            url, 
+            headers={'User-Agent': 'Mozilla/5.0'}
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            if response.status == 200:
+                return json.loads(response.read().decode('utf-8'))
     except Exception as e:
         print(f"Erro ao buscar dados da ESPN para {league}: {e}")
     return None
@@ -31,7 +36,6 @@ def parse_espn_matches(data):
         name = event.get("name")
         date_str = event.get("date")
         
-        # Dados da competição / status
         status_info = event.get("status", {})
         status_type = status_info.get("type", {})
         state = status_type.get("state")  # 'pre', 'in', 'post'
@@ -74,13 +78,11 @@ def parse_espn_matches(data):
 def get_serie_a_matches():
     """
     Retorna as partidas da Série A, integrando a automação da ESPN 
-    e adicionando manualmente entradas programadas específicas (como Chapecoense x Flamengo).
+    e adicionando a partida programada da Chapecoense x Flamengo em 02/12/2026.
     """
-    # 1. Puxa os dados automatizados da API da ESPN (Série A: bra.1)
     raw_data = get_espn_scoreboard("bra.1")
     matches = parse_espn_matches(raw_data)
     
-    # Lista de jogos manuais/programados que precisam constar obrigatoriamente
     manual_matches = [
         {
             "id": "chap_fla_2026",
@@ -102,7 +104,6 @@ def get_serie_a_matches():
         }
     ]
     
-    # Evita duplicidade caso a ESPN já retorne o jogo na listagem oficial
     existing_ids = {m["id"] for m in matches}
     for mm in manual_matches:
         if mm["id"] not in existing_ids:
