@@ -77,7 +77,7 @@ def parse_espn_matches(data):
     return matches
 
 def obter_jogos_serie_a():
-    """Retorna os jogos da Série A + Override da Chapecoense vs Flamengo."""
+    """Retorna os jogos da Série A + Override da Chapecoense vs Flamengo com escudos personalizados."""
     try:
         raw_data = fetch_espn_data(ESPN_BRASILEIRA_URL)
         matches = parse_espn_matches(raw_data)
@@ -88,12 +88,12 @@ def obter_jogos_serie_a():
                 "name": "Chapecoense vs Flamengo",
                 "home_team": {
                     "name": "Chapecoense",
-                    "logo": "https://i.postimg.cc/xxx/chapecoense.png",
+                    "logo": "https://i.postimg.cc/y8KNRJZh/13635096-m-removebg-preview.png",
                     "score": "0"
                 },
                 "away_team": {
                     "name": "Flamengo",
-                    "logo": "https://i.postimg.cc/xxx/flamengo.png",
+                    "logo": "https://i.postimg.cc/c4mpD6zM/bola-removebg-preview.png",
                     "score": "0"
                 },
                 "status": "PRE",
