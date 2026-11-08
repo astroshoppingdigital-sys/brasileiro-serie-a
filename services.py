@@ -1,110 +1,118 @@
-from fastapi import HTTPException
+from datetime import datetime, timezone, timedelta
 import requests
 
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
-}
+# Definição do fuso horário de Brasília (UTC-3)
+BRT = timezone(timedelta(hours=-3))
 
-ESCUDOS_CLUBES = {
-    "santos": "https://i.postimg.cc/j2tjm9P0/santos-fc.png",
-    "sao_paulo": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Brasao_do_Sao_Paulo_Futebol_Clube.svg/1200px-Brasao_do_Sao_Paulo_Futebol_Clube.svg.png",
-    "corinthians": "https://upload.wikimedia.org/wikipedia/pt/b/b4/Corinthians_simbolo.png",
-    "coritiba": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Coritiba_Foot_Ball_Club_logo.svg/1200px-Coritiba_Foot_Ball_Club_logo.svg.png",
-    "gremio": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Gr%C3%AAmio_Foot-Ball_Porto-Alegrense_logo.svg/1200px-Gr%C3%AAmio_Foot-Ball_Porto-Alegrense_logo.svg.png",
-    "vitoria": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2f/Esporte_Clube_Vit%C3%B3ria_logo.svg/1200px-Esporte_Clube_Vit%C3%B3ria_logo.svg.png",
-    "botafogo": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Botafogo_de_Futebol_e_Regatas_logo.svg/1200px-Botafogo_de_Futebol_e_Regatas_logo.svg.png",
-    "bragantino": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Red_Bull_Bragantino_logo.svg/1200px-Red_Bull_Bragantino_logo.svg.png",
-    "chapecoense": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Associa%C3%A7%C3%A3o_Chapecoense_de_Futebol_logo.svg/1200px-Associa%C3%A7%C3%A3o_Chapecoense_de_Futebol_logo.svg.png",
-    "mirassol": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Mirassol_Futebol_Clube_%28logo%29.svg/1200px-Mirassol_Futebol_Clube_%28logo%29.svg.png",
-    "internacional": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Sport_Club_Internacional_logo.svg/1200px-Sport_Club_Internacional_logo.svg.png",
-    "flamengo": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/Flamengo_brazão.svg/1200px-Flamengo_brazão.svg.png",
-    "athletico_pr": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/Athletico_Paranaense_logo_2019.svg/1200px-Athletico_Paranaense_logo_2019.svg.png",
-    "atletico_mg": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/22/Atletico_mineiro_galo.svg/1200px-Atletico_mineiro_galo.svg.png",
-    "vasco": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Vasco_da_Gama_logo.svg/1200px-Vasco_da_Gama_logo.svg.png",
-    "palmeiras": "https://i.postimg.cc/qMXDNBzY/palmeiras.png",
-    "remo": "https://i.postimg.cc/sD7dwR1R/Clube-do-Remo-svg.webp",
-    "cruzeiro": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Cruzeiro_Esporte_Clube_%28logo%29.svg/1200px-Cruzeiro_Esporte_Clube_%28logo%29.svg.png",
-    "bahia": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2b/Esporte_Clube_Bahia_logo.svg/1200px-Esporte_Clube_Bahia_logo.svg.png",
-    "fluminense": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Fluminense_FC_escudo.svg/1200px-Fluminense_FC_escudo.svg.png"
-}
-
-LOGO_SITE = "https://i.postimg.cc/K8PR1kCv/Gemini-Generated-Image-hozi2rhozi2rhozi-removebg-preview.png"
-
-def obter_jogos_serie_a():
-    # URL alterada para o Campeonato Brasileiro Série A (bra.1) mantendo a mesma lógica da Série B
-    url = "https://site.web.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard"
+def get_espn_scoreboard(league="bra.1"):
+    """
+    Busca os dados de placares ao vivo da API da ESPN para a liga especificada.
+    Padrão: bra.1 (Série A)
+    """
+    url = f"https://site.web.api.espn.com/apis/site/v2/sports/soccer/{league}/scoreboard"
     try:
-        resposta = requests.get(url, headers=HEADERS, timeout=15)
-        resposta.raise_for_status()
-        dados = resposta.json()
-
-        jogos_formatados = []
-        events = dados.get("events", [])
-
-        for event in events:
-            competition = event.get("competitions", [{}])[0]
-            competitors = competition.get("competitors", [])
-
-            mandante = next((c for c in competitors if c.get("homeAway") == "home"), {})
-            visitante = next((c for c in competitors if c.get("homeAway") == "away"), {})
-
-            status_obj = event.get("status", {})
-            status_type = status_obj.get("type", {})
-
-            state = status_type.get("state")  # "pre", "in", "post"
-            completed = status_type.get("completed", False)
-            description = status_type.get("description", "")
-
-            # Tratativa blindada de estado idêntica à da Série B
-            if state == "post" or completed:
-                status_real = "FINISHED"
-                status_customizado = "Partida Finalizada"
-                cor_indicador = "azul-gelo"
-            elif state == "in":
-                status_real = "LIVE"
-                status_customizado = "Ao Vivo"
-                cor_indicador = "verde-abacate"
-            elif state == "pre":
-                status_real = "SCHEDULED"
-                status_customizado = "Agendado"
-                cor_indicador = "cinza"
-            else:
-                status_real = "SCHEDULED"
-                status_customizado = description or "Aguardando"
-                cor_indicador = "cinza"
-
-            nome_mandante = mandante.get("team", {}).get("displayName", "")
-            nome_visitante = visitante.get("team", {}).get("displayName", "")
-
-            jogos_formatados.append({
-                "id": event.get("id"),
-                "homeTeam": {
-                    "name": nome_mandante,
-                    "logo": mandante.get("team", {}).get("logo")
-                },
-                "awayTeam": {
-                    "name": nome_visitante,
-                    "logo": visitante.get("team", {}).get("logo")
-                },
-                "date": event.get("date"),
-                "time": status_obj.get("displayClock"),
-                "stadium": competition.get("venue", {}).get("fullName"),
-                "score": {
-                    "fullTime": {
-                        "home": int(mandante.get("score", 0) if mandante.get("score") is not None else 0),
-                        "away": int(visitante.get("score", 0) if visitante.get("score") is not None else 0)
-                    }
-                },
-                "logo_transmissao_offline": LOGO_SITE,
-                "status": status_real,
-                "statusCustomizado": status_customizado,
-                "status_transmissao": "OFFLINE",
-                "cor_indicador": cor_indicador,
-                "destaque_banner": False,
-                "tempo_jogo": status_obj.get("displayClock"),
-                "periodo": status_obj.get("period")
-            })
-
-        return jogos_formatados
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return response.json()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Erro ao buscar jogos: {str(e)}")
+        print(f"Erro ao buscar dados da ESPN para {league}: {e}")
+    return None
+
+def parse_espn_matches(data):
+    """
+    Processa o JSON bruto da ESPN e converte no formato padronizado do backend.
+    """
+    matches = []
+    if not data or "events" not in data:
+        return matches
+
+    for event in data["events"]:
+        match_id = event.get("id")
+        name = event.get("name")
+        date_str = event.get("date")
+        
+        # Dados da competição / status
+        status_info = event.get("status", {})
+        status_type = status_info.get("type", {})
+        state = status_type.get("state")  # 'pre', 'in', 'post'
+        status_detail = status_type.get("detail") or status_type.get("description")
+        
+        competitions = event.get("competitions", [])
+        if not competitions:
+            continue
+            
+        competition = competitions[0]
+        competitors = competition.get("competitors", [])
+        
+        home_team = None
+        away_team = None
+        
+        for comp in competitors:
+            team_data = comp.get("team", {})
+            team_info = {
+                "name": team_data.get("displayName") or team_data.get("name"),
+                "logo": team_data.get("logo"),
+                "score": comp.get("score", "0")
+            }
+            if comp.get("homeAway") == "home":
+                home_team = team_info
+            else:
+                away_team = team_info
+
+        matches.append({
+            "id": match_id,
+            "name": name,
+            "date": date_str,
+            "status": state,
+            "status_text": status_detail,
+            "home_team": home_team,
+            "away_team": away_team
+        })
+
+    return matches
+
+def get_serie_a_matches():
+    """
+    Retorna as partidas da Série A, integrando a automação da ESPN 
+    e adicionando manualmente entradas programadas específicas (como Chapecoense x Flamengo).
+    """
+    # 1. Puxa os dados automatizados da API da ESPN (Série A: bra.1)
+    raw_data = get_espn_scoreboard("bra.1")
+    matches = parse_espn_matches(raw_data)
+    
+    # Lista de jogos manuais/programados que precisam constar obrigatoriamente
+    manual_matches = [
+        {
+            "id": "chap_fla_2026",
+            "name": "Chapecoense vs Flamengo",
+            "home_team": {
+                "name": "Chapecoense",
+                "logo": "https://i.postimg.cc/xxx/chapecoense.png",
+                "score": "0"
+            },
+            "away_team": {
+                "name": "Flamengo",
+                "logo": "https://i.postimg.cc/xxx/flamengo.png",
+                "score": "0"
+            },
+            "status": "pre",
+            "status_text": "21:30",
+            "date": "2026-12-02T21:30:00-03:00",
+            "timestamp": int(datetime(2026, 12, 2, 21, 30, tzinfo=BRT).timestamp())
+        }
+    ]
+    
+    # Evita duplicidade caso a ESPN já retorne o jogo na listagem oficial
+    existing_ids = {m["id"] for m in matches}
+    for mm in manual_matches:
+        if mm["id"] not in existing_ids:
+            matches.append(mm)
+            
+    return matches
+
+def get_serie_b_matches():
+    """
+    Retorna as partidas da Série B usando o endpoint correspondente (bra.2).
+    """
+    raw_data = get_espn_scoreboard("bra.2")
+    return parse_espn_matches(raw_data)
