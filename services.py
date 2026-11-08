@@ -77,7 +77,7 @@ def parse_espn_matches(data):
     return matches
 
 def obter_jogos_serie_a():
-    """Retorna os jogos da Série A + Override da Chapecoense vs Flamengo com escudos personalizados."""
+    """Retorna os jogos da Série A + Overrides manuais atualizados."""
     try:
         raw_data = fetch_espn_data(ESPN_BRASILEIRA_URL)
         matches = parse_espn_matches(raw_data)
@@ -94,6 +94,114 @@ def obter_jogos_serie_a():
                 "away_team": {
                     "name": "Flamengo",
                     "logo": "https://i.postimg.cc/c4mpD6zM/bola-removebg-preview.png",
+                    "score": "0"
+                },
+                "status": "PRE",
+                "status_text": "21:30",
+                "date": "2026-12-02T21:30:00-03:00",
+                "timestamp": int(datetime(2026, 12, 2, 21, 30, tzinfo=BRT).timestamp())
+            },
+            {
+                "id": "cor_san_2026",
+                "name": "Coritiba vs Santos",
+                "home_team": {
+                    "name": "Coritiba",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/2034.png",
+                    "score": "0"
+                },
+                "away_team": {
+                    "name": "Santos",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/212.png",
+                    "score": "0"
+                },
+                "status": "PRE",
+                "status_text": "19:30",
+                "date": "2026-11-18T19:30:00-03:00",
+                "timestamp": int(datetime(2026, 11, 18, 19, 30, tzinfo=BRT).timestamp())
+            },
+            {
+                "id": "vas_int_2026",
+                "name": "Vasco da Gama vs Internacional",
+                "home_team": {
+                    "name": "Vasco da Gama",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/3310.png",
+                    "score": "0"
+                },
+                "away_team": {
+                    "name": "Internacional",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/159.png",
+                    "score": "0"
+                },
+                "status": "PRE",
+                "status_text": "19:30",
+                "date": "2026-11-19T19:30:00-03:00",
+                "timestamp": int(datetime(2026, 11, 19, 19, 30, tzinfo=BRT).timestamp())
+            },
+            {
+                "id": "flu_mir_2026",
+                "name": "Fluminense vs Mirassol",
+                "home_team": {
+                    "name": "Fluminense",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/3445.png",
+                    "score": "0"
+                },
+                "away_team": {
+                    "name": "Mirassol",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/2027.png",
+                    "score": "0"
+                },
+                "status": "PRE",
+                "status_text": "18:30",
+                "date": "2026-11-22T18:30:00-03:00",
+                "timestamp": int(datetime(2026, 11, 22, 18, 30, tzinfo=BRT).timestamp())
+            },
+            {
+                "id": "san_gre_2026",
+                "name": "Santos vs Grêmio",
+                "home_team": {
+                    "name": "Santos",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/212.png",
+                    "score": "0"
+                },
+                "away_team": {
+                    "name": "Grêmio",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/131.png",
+                    "score": "0"
+                },
+                "status": "PRE",
+                "status_text": "21:00",
+                "date": "2026-11-23T21:00:00-03:00",
+                "timestamp": int(datetime(2026, 11, 23, 21, 0, tzinfo=BRT).timestamp())
+            },
+            {
+                "id": "vit_san_2026",
+                "name": "EC Vitória vs Santos",
+                "home_team": {
+                    "name": "EC Vitória",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/3457.png",
+                    "score": "0"
+                },
+                "away_team": {
+                    "name": "Santos",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/212.png",
+                    "score": "0"
+                },
+                "status": "PRE",
+                "status_text": "16:00",
+                "date": "2026-11-29T16:00:00-03:00",
+                "timestamp": int(datetime(2026, 11, 29, 16, 0, tzinfo=BRT).timestamp())
+            },
+            {
+                "id": "san_bot_2026",
+                "name": "Santos vs Botafogo",
+                "home_team": {
+                    "name": "Santos",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/212.png",
+                    "score": "0"
+                },
+                "away_team": {
+                    "name": "Botafogo",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/3440.png",
                     "score": "0"
                 },
                 "status": "PRE",
