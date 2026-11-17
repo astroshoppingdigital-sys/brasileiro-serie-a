@@ -20,6 +20,42 @@ def fetch_espn_data(url):
         print(f"Erro na requisição para {url}: {e}")
     return {}
 
+def formatar_status_tempo(date_str, state, status_detail):
+    """
+    Calcula dinamicamente o rótulo de tempo para jogos agendados (PRE):
+    - Se for no mesmo dia: 'Hoje às HH:MM'
+    - Se for no dia seguinte (Amanhã): 'Amanhã às HH:MM'
+    - Se for em outra data: exibe 'DD/MM às HH:MM'
+    Se o jogo estiver ao vivo ou encerrado, respeita o estado da ESPN.
+    """
+    if state != "pre" or not date_str:
+        return status_detail
+
+    try:
+        # Converte a data do jogo para o fuso de Brasília
+        dt_jogo_utc = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+        dt_jogo_brt = dt_jogo_utc.astimezone(BRT)
+        
+        agora_brt = datetime.now(BRT)
+        
+        data_jogo = dt_jogo_brt.date()
+        data_hoje = agora_brt.date()
+        
+        hora_minuto = dt_jogo_brt.strftime("%H:%M")
+        
+        # Diferença exata de dias
+        delta_dias = (data_jogo - data_hoje).days
+        
+        if delta_dias == 0:
+            return f"Hoje às {hora_minuto}"
+        elif delta_dias == 1:
+            return f"Amanhã às {hora_minuto}"
+        else:
+            # Para jogos mais distantes, mostra a data e o horário certinho
+            return dt_jogo_brt.strftime("%d/0%m às %H:%M" if dt_jogo_brt.month < 10 else "%d/%m às %H:%M")
+    except Exception:
+        return status_detail
+
 def parse_espn_matches(data):
     """Processa o JSON da ESPN no formato padrão do backend."""
     matches = []
@@ -38,7 +74,11 @@ def parse_espn_matches(data):
             
             # Padroniza para 'LIVE' quando estiver em andamento
             status_code = "LIVE" if state == "in" else state.upper()
-            status_detail = status_type.get("detail") or status_type.get("description", "")
+            
+            raw_detail = status_type.get("detail") or status_type.get("description", "")
+            
+            # Aplica a inteligência de cálculo de tempo para todos os jogos agendados
+            status_detail = formatar_status_tempo(date_str, state, raw_detail)
             
             competitions = event.get("competitions", [])
             if not competitions:
@@ -211,6 +251,10 @@ def obter_jogos_serie_a():
             }
         ]
         
+        # Aplica a formatação inteligente de tempo também nos jogos manuais/overrides
+        for mm in manual_matches:
+            mm["status_text"] = formatar_status_tempo(mm.get("date"), mm.get("status", "").lower(), mm.get("status_text"))
+
         existing_ids = {m["id"] for m in matches}
         for mm in manual_matches:
             if mm["id"] not in existing_ids:
