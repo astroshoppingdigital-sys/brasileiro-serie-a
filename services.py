@@ -48,11 +48,25 @@ def formatar_status_tempo(date_str, state, status_detail):
     except Exception:
         return status_detail
 
+def _jogo_ainda_dentro_janela_partida(date_str, agora_brt):
+    """Retorna True se o jogo começou há menos de 2h15 (evita falso encerramento da ESPN)."""
+    if not date_str:
+        return False
+    try:
+        dt_jogo_utc = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+        dt_jogo_brt = dt_jogo_utc.astimezone(BRT)
+        decorrido = agora_brt - dt_jogo_brt
+        return timedelta(minutes=-5) <= decorrido <= timedelta(hours=2, minutes=15)
+    except Exception:
+        return False
+
 def parse_espn_matches(data):
-    """Processa o JSON da ESPN gerenciando corretamente o intervalo e o término."""
+    """Processa o JSON da ESPN gerenciando intervalo, ao vivo e encerramento com segurança."""
     matches = []
     if not data or not isinstance(data, dict) or "events" not in data:
         return matches
+
+    agora_brt = datetime.now(BRT)
 
     for event in data.get("events", []):
         try:
@@ -66,33 +80,38 @@ def parse_espn_matches(data):
             completed = status_type.get("completed", False)
             
             period = status_info.get("period", 0)
+            clock = str(status_info.get("displayClock") or "")
             description = (status_type.get("description") or "").lower()
             detail = (status_type.get("detail") or "").lower()
-            
-            # Detecção rigorosa de Intervalo (Halftime)
-            is_halftime = (
-                state == "in" and (
-                    period == 2 or 
-                    "half" in description or 
-                    "halftime" in description or 
-                    "intervalo" in description or
-                    "half" in detail or
-                    "intervalo" in detail or
-                    status_info.get("displayClock") == "0:00"
-                )
+            short_detail = (status_type.get("shortDetail") or "").lower()
+
+            texto_status = f"{description} {detail} {short_detail}"
+            marcacao_intervalo = any(
+                palavra in texto_status
+                for palavra in ("half", "halftime", "intervalo", "ht")
             )
-            
-            # Mapeamento exato de estados solicitado
-            if is_halftime or "halftime" in description or "intervalo" in description:
+
+            # Intervalo ocorre ao fim do 1º tempo (ou sinalizado explicitamente pela ESPN)
+            is_halftime = marcacao_intervalo or (
+                state == "in" and period == 1 and clock in ("45:00", "0:00", "")
+            )
+
+            dentro_janela = _jogo_ainda_dentro_janela_partida(date_str, agora_brt)
+
+            if is_halftime and (state == "in" or dentro_janela):
                 status_code = "INTERVALO"
                 status_detail = "Em Descanso"
             elif state == "in":
                 status_code = "LIVE"
                 raw_detail = status_type.get("detail") or status_type.get("description", "Em andamento")
                 status_detail = raw_detail if raw_detail else "Ao Vivo"
-            elif state == "post" or completed:
+            elif (state == "post" or completed) and not dentro_janela:
                 status_code = "ENCERRADO"
                 status_detail = "Encerrado"
+            elif (state == "post" or completed) and dentro_janela:
+                # Proteção contra encerramento prematuro da ESPN enquanto a partida ainda está na janela normal
+                status_code = "INTERVALO"
+                status_detail = "Em Descanso"
             else:
                 status_code = "PRE"
                 raw_detail = status_type.get("detail") or status_type.get("description", "")
