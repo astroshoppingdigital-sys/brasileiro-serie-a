@@ -49,7 +49,7 @@ def formatar_status_tempo(date_str, state, status_detail):
         return status_detail
 
 def parse_espn_matches(data):
-    """Processa o JSON da ESPN tratando corretamente o intervalo e os estados da partida."""
+    """Processa o JSON da ESPN gerenciando corretamente o intervalo e o término."""
     matches = []
     if not data or not isinstance(data, dict) or "events" not in data:
         return matches
@@ -63,12 +63,13 @@ def parse_espn_matches(data):
             status_info = event.get("status", {})
             status_type = status_info.get("type", {})
             state = status_type.get("state", "pre")  # 'pre', 'in', 'post'
+            completed = status_type.get("completed", False)
             
             period = status_info.get("period", 0)
             description = (status_type.get("description") or "").lower()
             detail = (status_type.get("detail") or "").lower()
             
-            # Detecta se o jogo está no intervalo (Halftime / Período 2 com indicação de intervalo)
+            # Detecção rigorosa de Intervalo (Halftime)
             is_halftime = (
                 state == "in" and (
                     period == 2 or 
@@ -76,19 +77,20 @@ def parse_espn_matches(data):
                     "halftime" in description or 
                     "intervalo" in description or
                     "half" in detail or
-                    "intervalo" in detail
-                ) and status_info.get("displayClock") == "0:00"
+                    "intervalo" in detail or
+                    status_info.get("displayClock") == "0:00"
+                )
             )
             
-            # Força o status correto baseando-se no intervalo
+            # Mapeamento exato de estados solicitado
             if is_halftime or "halftime" in description or "intervalo" in description:
                 status_code = "INTERVALO"
                 status_detail = "Em Descanso"
             elif state == "in":
                 status_code = "LIVE"
-                raw_detail = status_type.get("detail") or status_type.get("description", "")
-                status_detail = raw_detail
-            elif state == "post":
+                raw_detail = status_type.get("detail") or status_type.get("description", "Em andamento")
+                status_detail = raw_detail if raw_detail else "Ao Vivo"
+            elif state == "post" or completed:
                 status_code = "ENCERRADO"
                 status_detail = "Encerrado"
             else:
@@ -133,7 +135,7 @@ def parse_espn_matches(data):
     return matches
 
 def obter_jogos_serie_a():
-    """Retorna os jogos da Série A (ESPN + Overrides manuais) com tratamento de intervalo."""
+    """Retorna os jogos da Série A (ESPN + Overrides manuais)."""
     try:
         raw_data = fetch_espn_data(ESPN_BRASILEIRA_URL)
         matches = parse_espn_matches(raw_data)
