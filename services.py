@@ -91,11 +91,39 @@ def _verificar_intervalo_espn(status_info):
 
 
 def _eh_jogo_coritiba_santos(match):
-    """Identifica o confronto Coritiba x Santos para evitar duplicação com manual_matches."""
+    """Identifica o confronto Coritiba x Santos."""
     home = ((match.get("home_team") or {}).get("name") or "").lower()
     away = ((match.get("away_team") or {}).get("name") or "").lower()
     times = {home, away}
     return any("coritiba" in t for t in times) and any("santos" in t for t in times)
+
+
+def _corrigir_placar_coritiba_santos(matches):
+    """Garante o resultado oficial: Santos 1 x 0 Coritiba."""
+    for m in matches:
+        if not _eh_jogo_coritiba_santos(m):
+            continue
+
+        home = dict(m.get("home_team") or {})
+        away = dict(m.get("away_team") or {})
+
+        home_nome = (home.get("name") or "").lower()
+        away_nome = (away.get("name") or "").lower()
+
+        if "santos" in home_nome:
+            home["score"] = "1"
+            away["score"] = "0"
+        elif "coritiba" in home_nome:
+            home["score"] = "0"
+            away["score"] = "1"
+        elif "santos" in away_nome:
+            away["score"] = "1"
+            home["score"] = "0"
+
+        m["home_team"] = home
+        m["away_team"] = away
+        m["status"] = "ENCERRADO"
+        m["status_text"] = "Encerrado"
 
 
 def _extrair_rodada_espn(data, event=None):
@@ -125,7 +153,7 @@ def _extrair_rodada_espn(data, event=None):
 def calcular_rodada_atual_serie_a(matches, data_espn=None):
     """
     Calcula automaticamente a rodada atual da Série A (35 a 38):
-    - Mantém na rodada 35 enquanto houver jogo não encerrado nela.
+    - Mantém na rodada atual enquanto houver jogo não encerrado nela.
     - Avança automaticamente para 36, 37 e 38 assim que os jogos da rodada encerrarem.
     """
     rodada_fonte = _extrair_rodada_espn(data_espn) or RODADA_INICIAL_FOCO
@@ -243,10 +271,7 @@ def parse_espn_matches(data, rodada_padrao=None):
 
 
 def _buscar_jogos_espn_rodadas_35_a_38():
-    """
-    Busca jogos da ESPN cobrindo o recorte atual e os dias da janela das rodadas 35 a 38,
-    garantindo jogos já encerrados da 35 (com placar), jogos pendentes da 35 e jogos até a 38.
-    """
+    """Busca jogos da ESPN cobrindo o recorte atual e as datas da janela das rodadas 35 a 38."""
     acumulado = []
     ids_vistos = set()
 
@@ -256,7 +281,6 @@ def _buscar_jogos_espn_rodadas_35_a_38():
             acumulado.append(m)
             ids_vistos.add(m["id"])
 
-    # Consulta dias-chave da janela da rodada 35 até o encerramento em dezembro/2026
     datas_consulta = [
         "20261118",
         "20261119",
@@ -284,12 +308,7 @@ def _buscar_jogos_espn_rodadas_35_a_38():
 
 
 def obter_jogos_serie_a():
-    """
-    Retorna os jogos da Série A da rodada 35 até a 38:
-    - Jogos encerrados da 35 ficam com status 'ENCERRADO' e placar oficial.
-    - Jogos que ainda vão acontecer na 35 ficam com status 'PRE'/'LIVE'/'INTERVALO'.
-    - Jogos das rodadas seguintes (36, 37, 38) seguem normalmente até a 38.
-    """
+    """Retorna os jogos da Série A da rodada 35 até a 38 com placares e status atualizados."""
     try:
         matches, raw_principal = _buscar_jogos_espn_rodadas_35_a_38()
 
@@ -325,10 +344,10 @@ def obter_jogos_serie_a():
                 "away_team": {
                     "name": "Santos",
                     "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/212.png",
-                    "score": "0",
+                    "score": "1",
                 },
-                "status": "PRE",
-                "status_text": "19:30",
+                "status": "ENCERRADO",
+                "status_text": "Encerrado",
                 "date": "2026-11-18T19:30:00-03:00",
                 "timestamp": int(datetime(2026, 11, 18, 19, 30, tzinfo=BRT).timestamp()),
             },
@@ -430,9 +449,10 @@ def obter_jogos_serie_a():
         ]
 
         for mm in manual_matches:
-            mm["status_text"] = formatar_status_tempo(
-                mm.get("date"), mm.get("status", "").lower(), mm.get("status_text")
-            )
+            if mm.get("status", "").lower() == "pre":
+                mm["status_text"] = formatar_status_tempo(
+                    mm.get("date"), "pre", mm.get("status_text")
+                )
 
         existing_ids = {m["id"] for m in matches}
         tem_coritiba_santos_espn = any(_eh_jogo_coritiba_santos(m) for m in matches)
@@ -444,11 +464,12 @@ def obter_jogos_serie_a():
                 matches.append(mm)
                 existing_ids.add(mm["id"])
 
-        # Mantém apenas jogos das rodadas 35 a 38 (ou sem rodada definida ainda)
         matches_filtrados = [
             m for m in matches
             if not m.get("rodada") or (RODADA_INICIAL_FOCO <= int(m["rodada"]) <= MAX_RODADAS)
         ]
+
+        _corrigir_placar_coritiba_santos(matches_filtrados)
 
         rodada_atual = calcular_rodada_atual_serie_a(matches_filtrados, raw_principal)
         for m in matches_filtrados:
