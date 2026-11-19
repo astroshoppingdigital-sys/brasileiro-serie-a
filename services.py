@@ -1,5 +1,6 @@
 from datetime import datetime, timezone, timedelta
 import urllib.request
+import unicodedata
 import json
 
 # Definição do fuso horário de Brasília (UTC-3)
@@ -29,6 +30,62 @@ def fetch_espn_data(url):
     except Exception as e:
         print(f"Erro na requisição para {url}: {e}")
     return {}
+
+
+def _normalizar_texto(txt):
+    """Remove acentos e padroniza nomes de equipas para evitar duplicados."""
+    if not txt:
+        return ""
+    nfkd = unicodedata.normalize("NFKD", str(txt).lower().strip())
+    limpo = "".join(c for c in nfkd if not unicodedata.combining(c))
+    aliases = {
+        "athletico paranaense": "athletico-pr",
+        "ec vitoria": "vitoria",
+        "vasco": "vasco da gama",
+        "bragantino": "red bull bragantino",
+    }
+    return aliases.get(limpo, limpo)
+
+
+def _chave_confronto(match):
+    """Gera chave única (equipas ordenadas + data BRT) para eliminar jogos duplicados."""
+    home = _normalizar_texto((match.get("home_team") or {}).get("name"))
+    away = _normalizar_texto((match.get("away_team") or {}).get("name"))
+    times_ord = tuple(sorted([home, away]))
+
+    date_str = match.get("date") or ""
+    dia_brt = ""
+    if date_str:
+        try:
+            dt_brt = datetime.fromisoformat(date_str.replace("Z", "+00:00")).astimezone(BRT)
+            dia_brt = dt_brt.strftime("%Y-%m-%d")
+        except Exception:
+            dia_brt = date_str[:10]
+
+    return (times_ord, dia_brt)
+
+
+def _inferir_rodada_por_data(date_str, rodada_espn=None):
+    """Define a rodada real (35 a 38) com base na data do jogo em BRT."""
+    if date_str:
+        try:
+            dt_brt = datetime.fromisoformat(date_str.replace("Z", "+00:00")).astimezone(BRT)
+            data_jogo = dt_brt.date()
+
+            if data_jogo <= datetime(2026, 11, 20).date():
+                return 35
+            elif data_jogo <= datetime(2026, 11, 24).date():
+                return 36
+            elif data_jogo <= datetime(2026, 11, 30).date():
+                return 37
+            else:
+                return 38
+        except Exception:
+            pass
+
+    if rodada_espn:
+        return max(RODADA_INICIAL_FOCO, min(MAX_RODADAS, int(rodada_espn)))
+    return RODADA_INICIAL_FOCO
 
 
 def formatar_status_tempo(date_str, state, status_detail):
@@ -92,10 +149,10 @@ def _verificar_intervalo_espn(status_info):
 
 def _eh_jogo_coritiba_santos(match):
     """Identifica o confronto Coritiba x Santos."""
-    home = ((match.get("home_team") or {}).get("name") or "").lower()
-    away = ((match.get("away_team") or {}).get("name") or "").lower()
+    home = _normalizar_texto((match.get("home_team") or {}).get("name"))
+    away = _normalizar_texto((match.get("away_team") or {}).get("name"))
     times = {home, away}
-    return any("coritiba" in t for t in times) and any("santos" in t for t in times)
+    return "coritiba" in times and "santos" in times
 
 
 def _corrigir_placar_coritiba_santos(matches):
@@ -107,8 +164,8 @@ def _corrigir_placar_coritiba_santos(matches):
         home = dict(m.get("home_team") or {})
         away = dict(m.get("away_team") or {})
 
-        home_nome = (home.get("name") or "").lower()
-        away_nome = (away.get("name") or "").lower()
+        home_nome = _normalizar_texto(home.get("name"))
+        away_nome = _normalizar_texto(away.get("name"))
 
         if "santos" in home_nome:
             home["score"] = "1"
@@ -192,7 +249,8 @@ def parse_espn_matches(data, rodada_padrao=None):
             match_id = str(event.get("id", ""))
             name = event.get("name", "")
             date_str = event.get("date", "")
-            rodada_evento = _extrair_rodada_espn(data, event) or rodada_geral
+            rodada_espn = _extrair_rodada_espn(data, event) or rodada_geral
+            rodada_evento = _inferir_rodada_por_data(date_str, rodada_espn)
 
             status_info = event.get("status", {})
             status_type = status_info.get("type", {})
@@ -243,7 +301,7 @@ def parse_espn_matches(data, rodada_padrao=None):
             for comp in competitors:
                 team_data = comp.get("team", {})
                 team_info = {
-                    "name": team_data.get("displayName") or team_data.get("name", "Time"),
+                    "name": team_data.get("displayName") or team_data.get("name", "Equipa"),
                     "logo": team_data.get("logo", ""),
                     "score": str(comp.get("score", "0")),
                 }
@@ -271,44 +329,45 @@ def parse_espn_matches(data, rodada_padrao=None):
 
 
 def _buscar_jogos_espn_rodadas_35_a_38():
-    """Busca jogos da ESPN cobrindo o recorte atual e as datas da janela das rodadas 35 a 38."""
+    """Busca jogos da ESPN cobrindo o recorte atual e as datas das rodadas 35 a 38 sem duplicar."""
     acumulado = []
     ids_vistos = set()
+    confrontos_vistos = set()
 
     raw_principal = fetch_espn_data(ESPN_BRASILEIRA_URL)
     for m in parse_espn_matches(raw_principal):
-        if m["id"] and m["id"] not in ids_vistos:
+        chave = _chave_confronto(m)
+        if m["id"] and m["id"] not in ids_vistos and chave not in confrontos_vistos:
             acumulado.append(m)
             ids_vistos.add(m["id"])
+            confrontos_vistos.add(chave)
 
     datas_consulta = [
         "20261118",
         "20261119",
-        "20261120",
         "20261121",
         "20261122",
         "20261123",
         "20261126",
         "20261129",
         "20261202",
-        "20261206",
+        "20261203",
     ]
 
     for dt_str in datas_consulta:
         raw_dia = fetch_espn_data(f"{ESPN_BRASILEIRA_URL}?dates={dt_str}")
         for m in parse_espn_matches(raw_dia):
-            rodada_m = m.get("rodada")
-            if rodada_m is not None and (rodada_m < RODADA_INICIAL_FOCO or rodada_m > MAX_RODADAS):
-                continue
-            if m["id"] and m["id"] not in ids_vistos:
+            chave = _chave_confronto(m)
+            if m["id"] and m["id"] not in ids_vistos and chave not in confrontos_vistos:
                 acumulado.append(m)
                 ids_vistos.add(m["id"])
+                confrontos_vistos.add(chave)
 
     return acumulado, raw_principal
 
 
 def obter_jogos_serie_a():
-    """Retorna os jogos da Série A da rodada 35 até a 38 com placares e status atualizados."""
+    """Retorna os jogos da Série A da rodada 35 até a 38 sem duplicados e com rodadas corretas."""
     try:
         matches, raw_principal = _buscar_jogos_espn_rodadas_35_a_38()
 
@@ -338,12 +397,12 @@ def obter_jogos_serie_a():
                 "rodada": 35,
                 "home_team": {
                     "name": "Coritiba",
-                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/2034.png",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/3456.png",
                     "score": "0",
                 },
                 "away_team": {
                     "name": "Santos",
-                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/212.png",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/2674.png",
                     "score": "1",
                 },
                 "status": "ENCERRADO",
@@ -357,12 +416,12 @@ def obter_jogos_serie_a():
                 "rodada": 35,
                 "home_team": {
                     "name": "Vasco da Gama",
-                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/3310.png",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/3454.png",
                     "score": "0",
                 },
                 "away_team": {
                     "name": "Internacional",
-                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/159.png",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/1936.png",
                     "score": "0",
                 },
                 "status": "PRE",
@@ -381,7 +440,7 @@ def obter_jogos_serie_a():
                 },
                 "away_team": {
                     "name": "Mirassol",
-                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/2027.png",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/9169.png",
                     "score": "0",
                 },
                 "status": "PRE",
@@ -395,12 +454,12 @@ def obter_jogos_serie_a():
                 "rodada": 36,
                 "home_team": {
                     "name": "Santos",
-                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/212.png",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/2674.png",
                     "score": "0",
                 },
                 "away_team": {
                     "name": "Grêmio",
-                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/131.png",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/6273.png",
                     "score": "0",
                 },
                 "status": "PRE",
@@ -419,7 +478,7 @@ def obter_jogos_serie_a():
                 },
                 "away_team": {
                     "name": "Santos",
-                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/212.png",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/2674.png",
                     "score": "0",
                 },
                 "status": "PRE",
@@ -433,12 +492,12 @@ def obter_jogos_serie_a():
                 "rodada": 38,
                 "home_team": {
                     "name": "Santos",
-                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/212.png",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/2674.png",
                     "score": "0",
                 },
                 "away_team": {
                     "name": "Botafogo",
-                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/3440.png",
+                    "logo": "https://a.espncdn.com/i/teamlogos/soccer/500/6086.png",
                     "score": "0",
                 },
                 "status": "PRE",
@@ -448,21 +507,20 @@ def obter_jogos_serie_a():
             },
         ]
 
+        existing_ids = {m["id"] for m in matches}
+        existing_confrontos = {_chave_confronto(m) for m in matches}
+
         for mm in manual_matches:
             if mm.get("status", "").lower() == "pre":
                 mm["status_text"] = formatar_status_tempo(
                     mm.get("date"), "pre", mm.get("status_text")
                 )
 
-        existing_ids = {m["id"] for m in matches}
-        tem_coritiba_santos_espn = any(_eh_jogo_coritiba_santos(m) for m in matches)
-
-        for mm in manual_matches:
-            if mm["id"] == "cor_san_2026" and tem_coritiba_santos_espn:
-                continue
-            if mm["id"] not in existing_ids:
+            chave_mm = _chave_confronto(mm)
+            if mm["id"] not in existing_ids and chave_mm not in existing_confrontos:
                 matches.append(mm)
                 existing_ids.add(mm["id"])
+                existing_confrontos.add(chave_mm)
 
         matches_filtrados = [
             m for m in matches
@@ -473,10 +531,7 @@ def obter_jogos_serie_a():
 
         rodada_atual = calcular_rodada_atual_serie_a(matches_filtrados, raw_principal)
         for m in matches_filtrados:
-            if not m.get("rodada"):
-                m["rodada"] = rodada_atual
-            else:
-                m["rodada"] = max(RODADA_INICIAL_FOCO, min(MAX_RODADAS, int(m["rodada"])))
+            m["rodada"] = _inferir_rodada_por_data(m.get("date"), m.get("rodada") or rodada_atual)
             m["rodada_atual"] = rodada_atual
 
         return matches_filtrados
@@ -494,5 +549,5 @@ def obter_rodada_atual_serie_a():
 
 
 def obter_jogos_serie_b():
-    """Mantida apenas para compatibilidade de importação no main.py[cite: 1]."""
+    """Mantida apenas para compatibilidade de importação no main.py."""
     return []
