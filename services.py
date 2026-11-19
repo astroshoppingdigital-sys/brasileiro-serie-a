@@ -9,6 +9,7 @@ BRT = timezone(timedelta(hours=-3))
 ESPN_BRASILEIRA_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard"
 
 MAX_RODADAS = 38
+RODADA_INICIAL_FOCO = 35
 
 
 def fetch_espn_data(url):
@@ -123,39 +124,40 @@ def _extrair_rodada_espn(data, event=None):
 
 def calcular_rodada_atual_serie_a(matches, data_espn=None):
     """
-    Calcula automaticamente a rodada atual da Série A (1 a 38):
-    - Ignora rodadas já totalmente encerradas quando há rodada posterior com jogo não encerrado.
-    - Mantém na rodada atual enquanto houver jogo em andamento, no intervalo ou agendado.
-    - Avança automaticamente para rodada + 1 (até 38) quando todos os jogos encerrarem.
+    Calcula automaticamente a rodada atual da Série A (35 a 38):
+    - Mantém na rodada 35 enquanto houver jogo não encerrado nela.
+    - Avança automaticamente para 36, 37 e 38 assim que os jogos da rodada encerrarem.
     """
-    rodada_fonte = _extrair_rodada_espn(data_espn) or 35
+    rodada_fonte = _extrair_rodada_espn(data_espn) or RODADA_INICIAL_FOCO
     jogos_validos = [m for m in matches if m.get("rodada")]
 
     if not jogos_validos:
-        return max(1, min(MAX_RODADAS, rodada_fonte))
+        return max(RODADA_INICIAL_FOCO, min(MAX_RODADAS, rodada_fonte))
 
     rodadas_presentes = sorted({int(m["rodada"]) for m in jogos_validos})
 
     for r in rodadas_presentes:
+        if r < RODADA_INICIAL_FOCO:
+            continue
         jogos_da_rodada = [m for m in jogos_validos if int(m["rodada"]) == r]
         tem_jogo_pendente = any(
             m.get("status") in ("LIVE", "INTERVALO", "PRE") for m in jogos_da_rodada
         )
         if tem_jogo_pendente:
-            return max(1, min(MAX_RODADAS, r))
+            return max(RODADA_INICIAL_FOCO, min(MAX_RODADAS, r))
 
-    proxima_rodada = max(rodada_fonte, max(rodadas_presentes)) + 1
-    return max(1, min(MAX_RODADAS, proxima_rodada))
+    proxima_rodada = max(RODADA_INICIAL_FOCO, rodada_fonte, max(rodadas_presentes)) + 1
+    return max(RODADA_INICIAL_FOCO, min(MAX_RODADAS, proxima_rodada))
 
 
-def parse_espn_matches(data):
+def parse_espn_matches(data, rodada_padrao=None):
     """Processa o JSON da ESPN da Série A refletindo Intervalo, Ao Vivo, Agendado, Encerrado e Rodada."""
     matches = []
     if not data or not isinstance(data, dict) or "events" not in data:
         return matches
 
     agora_brt = datetime.now(BRT)
-    rodada_geral = _extrair_rodada_espn(data)
+    rodada_geral = _extrair_rodada_espn(data) or rodada_padrao
 
     for event in data.get("events", []):
         try:
@@ -240,11 +242,56 @@ def parse_espn_matches(data):
     return matches
 
 
+def _buscar_jogos_espn_rodadas_35_a_38():
+    """
+    Busca jogos da ESPN cobrindo o recorte atual e os dias da janela das rodadas 35 a 38,
+    garantindo jogos já encerrados da 35 (com placar), jogos pendentes da 35 e jogos até a 38.
+    """
+    acumulado = []
+    ids_vistos = set()
+
+    raw_principal = fetch_espn_data(ESPN_BRASILEIRA_URL)
+    for m in parse_espn_matches(raw_principal):
+        if m["id"] and m["id"] not in ids_vistos:
+            acumulado.append(m)
+            ids_vistos.add(m["id"])
+
+    # Consulta dias-chave da janela da rodada 35 até o encerramento em dezembro/2026
+    datas_consulta = [
+        "20261118",
+        "20261119",
+        "20261120",
+        "20261121",
+        "20261122",
+        "20261123",
+        "20261126",
+        "20261129",
+        "20261202",
+        "20261206",
+    ]
+
+    for dt_str in datas_consulta:
+        raw_dia = fetch_espn_data(f"{ESPN_BRASILEIRA_URL}?dates={dt_str}")
+        for m in parse_espn_matches(raw_dia):
+            rodada_m = m.get("rodada")
+            if rodada_m is not None and (rodada_m < RODADA_INICIAL_FOCO or rodada_m > MAX_RODADAS):
+                continue
+            if m["id"] and m["id"] not in ids_vistos:
+                acumulado.append(m)
+                ids_vistos.add(m["id"])
+
+    return acumulado, raw_principal
+
+
 def obter_jogos_serie_a():
-    """Retorna os jogos da Série A com contagem automática de rodada até a 38."""
+    """
+    Retorna os jogos da Série A da rodada 35 até a 38:
+    - Jogos encerrados da 35 ficam com status 'ENCERRADO' e placar oficial.
+    - Jogos que ainda vão acontecer na 35 ficam com status 'PRE'/'LIVE'/'INTERVALO'.
+    - Jogos das rodadas seguintes (36, 37, 38) seguem normalmente até a 38.
+    """
     try:
-        raw_data = fetch_espn_data(ESPN_BRASILEIRA_URL)
-        matches = parse_espn_matches(raw_data)
+        matches, raw_principal = _buscar_jogos_espn_rodadas_35_a_38()
 
         manual_matches = [
             {
@@ -397,26 +444,34 @@ def obter_jogos_serie_a():
                 matches.append(mm)
                 existing_ids.add(mm["id"])
 
-        rodada_atual = calcular_rodada_atual_serie_a(matches, raw_data)
-        for m in matches:
+        # Mantém apenas jogos das rodadas 35 a 38 (ou sem rodada definida ainda)
+        matches_filtrados = [
+            m for m in matches
+            if not m.get("rodada") or (RODADA_INICIAL_FOCO <= int(m["rodada"]) <= MAX_RODADAS)
+        ]
+
+        rodada_atual = calcular_rodada_atual_serie_a(matches_filtrados, raw_principal)
+        for m in matches_filtrados:
             if not m.get("rodada"):
                 m["rodada"] = rodada_atual
+            else:
+                m["rodada"] = max(RODADA_INICIAL_FOCO, min(MAX_RODADAS, int(m["rodada"])))
             m["rodada_atual"] = rodada_atual
 
-        return matches
+        return matches_filtrados
     except Exception as e:
         print(f"Erro em obter_jogos_serie_a: {e}")
         return []
 
 
 def obter_rodada_atual_serie_a():
-    """Retorna o número inteiro da rodada atual da Série A (de 1 até 38)."""
+    """Retorna o número inteiro da rodada atual da Série A (de 35 até 38)."""
     matches = obter_jogos_serie_a()
     if matches and matches[0].get("rodada_atual"):
         return matches[0]["rodada_atual"]
-    return 35
+    return RODADA_INICIAL_FOCO
 
 
 def obter_jogos_serie_b():
-    """Mantida apenas para compatibilidade de importação no main.py."""
+    """Mantida apenas para compatibilidade de importação no main.py[cite: 1]."""
     return []
