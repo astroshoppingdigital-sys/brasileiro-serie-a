@@ -33,7 +33,7 @@ def fetch_espn_data(url):
 
 
 def _normalizar_texto(txt):
-    """Remove acentos e padroniza nomes de equipas para evitar duplicados."""
+    """Remove acentos e padroniza nomes de times para evitar duplicados."""
     if not txt:
         return ""
     nfkd = unicodedata.normalize("NFKD", str(txt).lower().strip())
@@ -48,7 +48,7 @@ def _normalizar_texto(txt):
 
 
 def _chave_confronto(match):
-    """Gera chave única (equipas ordenadas + data BRT) para eliminar jogos duplicados."""
+    """Gera chave única (times ordenados + data BRT) para eliminar jogos duplicados."""
     home = _normalizar_texto((match.get("home_team") or {}).get("name"))
     away = _normalizar_texto((match.get("away_team") or {}).get("name"))
     times_ord = tuple(sorted([home, away]))
@@ -88,6 +88,16 @@ def _inferir_rodada_por_data(date_str, rodada_espn=None):
     return RODADA_INICIAL_FOCO
 
 
+def _timestamp_jogo(date_str):
+    """Retorna timestamp inteiro para ordenação cronológica estável."""
+    if not date_str:
+        return 0
+    try:
+        return int(datetime.fromisoformat(date_str.replace("Z", "+00:00")).timestamp())
+    except Exception:
+        return 0
+
+
 def formatar_status_tempo(date_str, state, status_detail):
     """Formata datas de jogos agendados (PRE) em BRT."""
     if state != "pre" or not date_str:
@@ -109,19 +119,6 @@ def formatar_status_tempo(date_str, state, status_detail):
             return dt_jogo_brt.strftime("%d/%m às %H:%M")
     except Exception:
         return status_detail
-
-
-def _jogo_dentro_janela_partida(date_str, agora_brt):
-    """Retorna True se a partida começou há menos de 2h15 (evita falso encerramento da ESPN)."""
-    if not date_str:
-        return False
-    try:
-        dt_jogo_utc = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
-        dt_jogo_brt = dt_jogo_utc.astimezone(BRT)
-        decorrido = agora_brt - dt_jogo_brt
-        return timedelta(minutes=-5) <= decorrido <= timedelta(hours=2, minutes=15)
-    except Exception:
-        return False
 
 
 def _verificar_intervalo_espn(status_info):
@@ -241,7 +238,6 @@ def parse_espn_matches(data, rodada_padrao=None):
     if not data or not isinstance(data, dict) or "events" not in data:
         return matches
 
-    agora_brt = datetime.now(BRT)
     rodada_geral = _extrair_rodada_espn(data) or rodada_padrao
 
     for event in data.get("events", []):
@@ -256,8 +252,6 @@ def parse_espn_matches(data, rodada_padrao=None):
             status_type = status_info.get("type", {})
             state = (status_type.get("state") or "pre").lower()
             completed = bool(status_type.get("completed", False))
-
-            dentro_janela = _jogo_dentro_janela_partida(date_str, agora_brt)
             no_intervalo = _verificar_intervalo_espn(status_info)
 
             if no_intervalo:
@@ -272,17 +266,9 @@ def parse_espn_matches(data, rodada_padrao=None):
                     or "Em andamento"
                 )
                 status_detail = raw_detail
-            elif (state == "post" or completed) and not dentro_janela:
+            elif state == "post" or completed:
                 status_code = "ENCERRADO"
                 status_detail = "Encerrado"
-            elif (state == "post" or completed) and dentro_janela:
-                status_code = "LIVE"
-                raw_detail = status_type.get("shortDetail") or status_type.get("detail") or "Em andamento"
-                status_detail = (
-                    "Em andamento"
-                    if "final" in raw_detail.lower() or "ft" in raw_detail.lower()
-                    else raw_detail
-                )
             else:
                 status_code = "PRE"
                 raw_detail = status_type.get("detail") or status_type.get("description", "")
@@ -301,7 +287,7 @@ def parse_espn_matches(data, rodada_padrao=None):
             for comp in competitors:
                 team_data = comp.get("team", {})
                 team_info = {
-                    "name": team_data.get("displayName") or team_data.get("name", "Equipa"),
+                    "name": team_data.get("displayName") or team_data.get("name", "Time"),
                     "logo": team_data.get("logo", ""),
                     "score": str(comp.get("score", "0")),
                 }
@@ -315,6 +301,7 @@ def parse_espn_matches(data, rodada_padrao=None):
                     "id": match_id,
                     "name": name,
                     "date": date_str,
+                    "timestamp": _timestamp_jogo(date_str),
                     "rodada": rodada_evento,
                     "status": status_code,
                     "status_text": status_detail,
@@ -367,7 +354,7 @@ def _buscar_jogos_espn_rodadas_35_a_38():
 
 
 def obter_jogos_serie_a():
-    """Retorna os jogos da Série A da rodada 35 até a 38 sem duplicados e com rodadas corretas."""
+    """Retorna os jogos da Série A da rodada 35 até a 38 sem duplicatas e com rodadas corretas."""
     try:
         matches, raw_principal = _buscar_jogos_espn_rodadas_35_a_38()
 
@@ -533,7 +520,10 @@ def obter_jogos_serie_a():
         for m in matches_filtrados:
             m["rodada"] = _inferir_rodada_por_data(m.get("date"), m.get("rodada") or rodada_atual)
             m["rodada_atual"] = rodada_atual
+            if not m.get("timestamp"):
+                m["timestamp"] = _timestamp_jogo(m.get("date"))
 
+        matches_filtrados.sort(key=lambda item: (int(item.get("rodada") or 35), int(item.get("timestamp") or 0)))
         return matches_filtrados
     except Exception as e:
         print(f"Erro em obter_jogos_serie_a: {e}")
