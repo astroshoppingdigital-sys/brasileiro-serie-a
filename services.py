@@ -415,3 +415,8 @@ def obter_rodada_atual_serie_a():
     if matches and matches[0].get("rodada_atual"):
         return matches[0]["rodada_atual"]
     return 35
+
+
+def obter_jogos_serie_b():
+    """Mantida apenas para compatibilidade de importação no main.py."""
+    return []
